@@ -89,10 +89,11 @@ Each User record can have multiple Review records.
   - It includes DbSet properties for each of the tables: Users, Products, Reviews, Orders, and OrderProducts.
   - The OnModelCreating method is overridden to configure relationships and constraints using Fluent API.
 
-
 ## Databse Schema 
 
 ![](img/ecommerce_schema.JPG)
+
+
 
 ---
 
