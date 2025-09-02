@@ -49,3 +49,10 @@ such as:
    - `OrderDate` **DateTime** =>  Timestamp of when the order was placed.
    - `TotalAmount` **Decimal** => Total amount for the order.
 
+## Relationships description 
+- A user can place multiple orders (One-to-Many relationship between Users and Orders).
+- An order can contain multiple products (Many-to-Many relationship between Orders and Products, resolved through the OrderProducts table).
+- A user can write multiple reviews, but each review is for a single product (One-to-Many relationship between Users and Reviews, and One-to-Many relationship between Products and Reviews).
+- Each product can have multiple reviews (One-to-Many relationship between Products and Reviews).
+- Each order is associated with a single user (Many-to-One relationship between Orders and Users).
+
