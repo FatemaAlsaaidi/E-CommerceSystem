@@ -56,3 +56,29 @@ such as:
 - Each product can have multiple reviews (One-to-Many relationship between Products and Reviews).
 - Each order is associated with a single user (Many-to-One relationship between Orders and Users).
 
+## Navigation 
+
+**Orders Table**
+
+Each Order record is associated with a single User record.
+Each Order record is associated with one or more OrderProduct records.
+
+**OrderProducts Table**
+
+Each OrderProduct record is associated with a single Order record.
+Each OrderProduct record is associated with a single Product record.
+
+**Products Table**
+
+Each Product record can have multiple Review records.
+Each Product record can have multiple OrderProduct records.
+
+**Reviews Table**
+
+Each Review record is associated with a single User record.
+Each Review record is associated with a single Product record.
+
+**Users Table**
+Each User record can have multiple Order records.
+Each User record can have multiple Review records.
+
