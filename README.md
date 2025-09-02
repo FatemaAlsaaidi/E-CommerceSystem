@@ -82,3 +82,17 @@ Each Review record is associated with a single Product record.
 Each User record can have multiple Order records.
 Each User record can have multiple Review records.
 
+## DB Context
+**ECommerceContext Class**
+
+  - This class inherits from DbContext and represents the session with the database.
+  - It includes DbSet properties for each of the tables: Users, Products, Reviews, Orders, and OrderProducts.
+  - The OnModelCreating method is overridden to configure relationships and constraints using Fluent API.
+
+
+## Databse Schema 
+
+![](img/ecommerce_schema.JPG)
+
+---
+
