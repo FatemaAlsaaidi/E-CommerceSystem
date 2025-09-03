@@ -15,10 +15,21 @@ namespace E_CommerceSystem
         public DbSet<OrderProducts> OrderProducts { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
+        public DbSet<Category> Categories { get; set; } = default!;
+        public DbSet<Supplier> Suppliers { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
                         .HasIndex(u => u.Email)
+                        .IsUnique();
+
+            modelBuilder.Entity<Category>()
+                        .HasIndex(c => c.Name)
+                        .IsUnique();
+
+            modelBuilder.Entity<Supplier>()
+                        .HasIndex(s => s.Name)
                         .IsUnique();
 
         }
