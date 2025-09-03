@@ -97,3 +97,18 @@ Each User record can have multiple Review records.
 
 ---
 
+## Repositories
+- Each repository class implements CRUD operations for its respective entity, which mean Repositories include methods for adding, retrieving, updating, and deleting records.
+- They interact with the ECommerceContext to perform database operations.
+- Example: OrderProductsRepo , injecting the DbContext through the constructor to enable database operations.
+    ```sql
+        private readonly ApplicationDbContext _context;
+
+        public OrderProductsRepo(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+    ```
+
+
