@@ -1,4 +1,4 @@
-# E-CommerceSystem
+﻿# E-CommerceSystem
 
 ## Overview
 E-CommerceSystem is a comprehensive e-commerce platform designed to facilitate online shopping experiences. It provides features for product management, user authentication, order processing, and payment integration.
@@ -405,4 +405,69 @@ app.UseAuthorization();
 app.Run();
 ```
 
+
+## Guide to implement addtional features 
+
+### Add a new Models
+```
+Category [ Fields: CategoryId, Name, Description ] [Relations: One Category → Many Products ] 
+o Supplier [ SupplierId, Name, ContactEmail, Phone ] [Relation: One Supplier → Many Products ] - 
+For each model implement the needed repo, service, controller and input/output DTOs along with 
+implement a full crud operations logic  - 
+For all the models / DTOs in the system use the Auto mapper instead of manual mapping
+```
+
+1. Models: add Category, Supplier; add FKs to Product, add unique indexes
+
+2. DbContext: add DbSet<> + unique attribute in OnModelCreating
+
+3. Migrations: add migration, update DB
+
+![](img/NewVersionSchema.JPG)
+
+4. DTOs: Create Create/Update/Read DTOs for Category & Supplier (and adjust Product DTOs to include Category/Supplier)
+
+5. AutoMapper: add Profiles; register in DI
+ - install autoMapperBackages  
+[](img/AutoMapperBackage1.JPG)
+[](img/AutoMapperBackage2.JPG)
+
+- In program 
+```sql
+using AutoMapper; // Add this using directive for AutoMapper
+//-----------------
+builder.Services.AddAutoMapper(typeof(Program));
+
+```
+- Inject IMapper into service
+```sql
+  private readonly IMapper _mapper;
+  public ReviewService(IMapper mapper)
+  {
+      _mapper = mapper;
+  }
+```
+- in add method inside service add this part of code :
+```sql
+var review = _mapper.Map<Review>(reviewDTO, opt =>
+ {
+     opt.Items["pid"] = pid;
+     opt.Items["uid"] = uid;
+ });
+```
+
+
+6. Repositories: create ICategoryRepo, ISupplierRepo + EF implementations
+
+7. Services: business logic, validation 
+
+8. Register New repositories and services into regestraion services in program 
+```sql
+    builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+    builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+    builder.Services.AddScoped<ISupplierRepo, SupplierRepo>();
+    builder.Services.AddScoped<ISupplierService, SupplierService>();
+```
+9. Controllers: full CRUD + pagination; use AutoMapper everywhere
 
