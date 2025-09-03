@@ -25,5 +25,10 @@ namespace E_CommerceSystem.Models
         [Required]
         public string Role { get; set; }
 
+        public record UserRegisterDto(string UName, string Email, string Password, string? Phone);
+        public record UserReadDto(int UID, string UName, string Email, string Role, DateTime CreatedAt);
+
+        public record UserUpdateDto(string UName, string Email, string? Phone);
+
     }
 }
