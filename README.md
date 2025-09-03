@@ -136,6 +136,7 @@ In above example, every property in the DTO corresponds to a field in the OrderP
 
 ## Controllers
 - Controllers handle HTTP requests and responses, acting as the entry point for API calls.
+- To define a controller, it typically inherits from ControllerBase and is decorated with attributes such as [ApiController] and [Route("api/[controller]")].
 - They use services to perform operations and return appropriate responses.
 ``` sql
 private readonly IOrderService _orderService;
