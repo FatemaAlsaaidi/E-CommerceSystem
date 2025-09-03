@@ -309,4 +309,56 @@ Security: If the token is invalid or unreadable, the method throws an Unauthoriz
 - DeleteReview => Allows users to delete their review by its ID.
 - UpdateReview => Allows users to update their review by its ID.
 
+## Program
+
+- The Program.cs file is the entry point of the application.
+- It sets up the web host, configures services, and defines middleware for handling HTTP requests.
+- It includes configurations for authentication, authorization, and routing.
+- The file also ensures that the database is created and ready for use when the application starts.
+- It uses the builder pattern to configure and build the application.
+- It includes middleware for handling HTTPS redirection, authentication, and authorization.
+
+**Can we say the program class has 3 main parts:**
+
+1. Create empty builder
+```sql
+var builder = WebApplication.CreateBuilder(args);
+```
+2. Configure services (Services Registraion)
+- which register Database Connection String, Repositories, Services, Controllers, Authentication and Authorization
+4. save builder as web api app
+```sql
+var app = builder.Build();
+```
+3. the HTTP request pipeline
+- which include Middleware for HTTPS redirection, Authentication, Authorization, and Controller mapping.
+- Use Swagger for API documentation in development environment
+```sql
+if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+```
+- Use HTTPS Redirection Middleware to redirect HTTP requests to HTTPS
+```sql
+  app.UseHttpsRedirection();
+
+```
+- Use Authentication and Authorization Middleware to protect endpoints 
+```sql
+app.UseAuthentication(); //jwt check middleware
+app.UseAuthorization();
+```
+- Map Controller Endpoints to handle incoming requests
+```sql
+ app.MapControllers();
+
+```
+4. Run the App
+```sql
+app.Run();
+```
+
 
