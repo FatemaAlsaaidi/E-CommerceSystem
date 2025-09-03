@@ -428,9 +428,9 @@ For all the models / DTOs in the system use the Auto mapper instead of manual ma
 4. DTOs: Create Create/Update/Read DTOs for Category & Supplier (and adjust Product DTOs to include Category/Supplier)
 
 5. AutoMapper: add Profiles; register in DI
- - install autoMapperBackages  
-[](img/AutoMapperBackage1.JPG)
-[](img/AutoMapperBackage2.JPG)
+ - install autoMapperBackage
+AutoMapper.Extensions.Microsoft.DependencyInjection
+[](img/AutoMapperBackage1.JPG) 
 
 - In program 
 ```sql
