@@ -17,10 +17,17 @@ namespace E_CommerceSystem.Models
         [Range(0, int.MaxValue)]
         public int Stock { get; set; }
 
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int? CategoryId { get; set; }
+
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int? SupplierId { get; set; }
         public record ProductReadDto(
             int PID, string ProductName, string? Description, decimal Price, int Stock,
-            int? CategoryId, string? CategoryName,
-            int? SupplierId, string? SupplierName
+            int? CategoryId,
+            int? SupplierId
         );
         public record ProductCreateDto(
             string ProductName, string? Description, decimal Price, int Stock,
