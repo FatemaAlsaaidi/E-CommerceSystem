@@ -8,6 +8,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using static E_CommerceSystem.Models.ProductDTO;
+
+
 namespace E_CommerceSystem.Controllers
 {
 
@@ -18,11 +23,13 @@ namespace E_CommerceSystem.Controllers
     {
         private readonly IProductService _productService;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public ProductController(IProductService productService, IConfiguration configuration)
+        public ProductController(IProductService productService, IConfiguration configuration, IMapper mapper)
         {
             _productService = productService;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [HttpPost("AddProduct")]
@@ -111,56 +118,22 @@ namespace E_CommerceSystem.Controllers
        
         [AllowAnonymous]
         [HttpGet("GetAllProducts")]
-        public IActionResult GetAllProducts(
-        [FromQuery] string? name,
-        [FromQuery] decimal? minPrice,
-        [FromQuery] decimal? maxPrice,
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10)
+        public IActionResult GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
+                                [FromQuery] string? name = null, [FromQuery] decimal? minPrice = null,
+                                [FromQuery] decimal? maxPrice = null)
         {
-            try
-            {
-                // Validate pagination parameters
-                if (pageNumber < 1 || pageSize < 1)
-                {
-                    return BadRequest("PageNumber and PageSize must be greater than 0.");
-                }
-
-                // Call the service to get the paged and filtered products
-                var products = _productService.GetAllProducts(pageNumber, pageSize, name, minPrice, maxPrice);
-
-                if (products == null || !products.Any())
-                {
-                    return NotFound("No products found matching the given criteria.");
-                }
-
-                return Ok(products);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while retrieving products. {ex.Message}");
-            }
+            var products = _productService.GetAllProducts(pageNumber, pageSize, name, minPrice, maxPrice);
+            var dtos = _mapper.Map<List<ProductReadDto>>(products);
+            return Ok(dtos);
         }
 
         [AllowAnonymous]
-        [HttpGet("GetProductByID/{ProductId}")]
-        public IActionResult GetProductById(int ProductId)
+        [HttpGet("GetProductByID")]
+        public IActionResult GetProductByID(int id)
         {
-            try
-            {
-                var product = _productService.GetProductById(ProductId);
-                if (product == null)
-                    return NotFound("No product found.");
-
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while retrieving product. {(ex.Message)}");
-
-            }
+            var product = _productService.GetProductById(id);
+            var dto = _mapper.Map<ProductReadDto>(product);   
+            return Ok(dto);
         }
         private string? GetUserRoleFromToken(string token)
         {
