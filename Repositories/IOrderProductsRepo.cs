@@ -6,6 +6,7 @@ namespace E_CommerceSystem.Repositories
     {
         void AddOrderProducts(OrderProducts product);
         IEnumerable<OrderProducts> GetAllOrders();
-        List<OrderProducts> GetOrdersByOrderId(int oid);
+        IQueryable<OrderProducts> GetOrdersByOrderId(int oid);
+
     }
 }

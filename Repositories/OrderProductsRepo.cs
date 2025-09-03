@@ -1,4 +1,5 @@
 ﻿using E_CommerceSystem.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace E_CommerceSystem.Repositories
 {
@@ -28,18 +29,18 @@ namespace E_CommerceSystem.Repositories
         {
             try
             {
-                return _context.OrderProducts.ToList();
+                return _context.OrderProducts.AsNoTracking(); // no Include needed when using ProjectTo
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Database error: {ex.Message}");
             }
         }
-        public List<OrderProducts> GetOrdersByOrderId(int oid)
+        public IQueryable<OrderProducts> GetOrdersByOrderId(int oid)
         {
             try
             {
-                return _context.OrderProducts.Where(p => p.OID == oid).ToList();
+                return _context.OrderProducts.AsNoTracking(); // no Include needed when using ProjectTo
             }
             catch (Exception ex)
             {
