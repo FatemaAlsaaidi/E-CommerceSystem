@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using AutoMapper; // Add this using directive for AutoMapper
+
 
 namespace E_CommerceSystem
 {
@@ -86,6 +88,10 @@ namespace E_CommerceSystem
         }
     });
             });
+
+            // Auto Mapper Configurations
+            builder.Services.AddAutoMapper(typeof(Program));
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
