@@ -3,6 +3,34 @@
 ## Overview
 E-CommerceSystem is a comprehensive e-commerce platform designed to facilitate online shopping experiences. It provides features for product management, user authentication, order processing, and payment integration.
 
+## Technologies Used
+- **ASP.NET Core**: A cross-platform framework for building web applications and APIs.
+- **Entity Framework Core**: An Object-Relational Mapper (ORM) for database interactions.
+- **SQL Server**: A relational database management system for storing application data.
+- **JWT (JSON Web Tokens)**: For secure user authentication and authorization.
+- **Swagger**: For API documentation and testing.
+- **Dependency Injection**: For managing service lifetimes and dependencies.
+![](img/TechnologiesUsed.JPG)
+
+## App Settings
+- The App Settings configuration file is a central place to manage system-level settings for the application. It allows developers to configure key parameters without modifying the source code directly, which is crucial for managing different environments (e.g., development, staging, and production).
+
+- Any changes to the application's core settings, such as the database connection or security parameters, are handled here.
+
+- Key configurations typically include:
+
+1. Database Connection String: This setting specifies the information required to connect to the application's database, including the server address, database name, user credentials, and port.
+
+2. JWT Settings: These settings control the behavior of JSON Web Tokens (JWT) for authentication. They typically include:
+
+a. Secret Key: A unique, secure key used to sign and verify the tokens.
+
+b. Issuer: The entity that issued the token.
+
+c. Audience: The recipients that the token is intended for.
+
+d. Expiration Time: How long the token remains valid before it expires.
+
 
 ## Models With Data annotaions and value validation 
 *note*
