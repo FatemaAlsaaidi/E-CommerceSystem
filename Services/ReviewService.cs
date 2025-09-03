@@ -2,6 +2,12 @@
 using E_CommerceSystem.Repositories;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using System.Security.Cryptography;
+using AutoMapper;
+
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
+
 
 namespace E_CommerceSystem.Services
 {
@@ -11,12 +17,15 @@ namespace E_CommerceSystem.Services
         public IProductService _productService;
         public IOrderService _orderService;
         public IOrderProductsService _orderProductsService;
-        public ReviewService(IReviewRepo reviewRepo, IProductService productService, IOrderProductsService orderProductsService, IOrderService orderService)
+        private readonly IMapper _mapper;
+
+        public ReviewService(IReviewRepo reviewRepo, IProductService productService, IOrderProductsService orderProductsService, IOrderService orderService, IMapper mapper)
         {
             _reviewRepo = reviewRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _orderService = orderService;
+            _mapper = mapper;
         }
         public IEnumerable<Review> GetAllReviews(int pageNumber, int pageSize,int pid)
         {
@@ -66,15 +75,12 @@ namespace E_CommerceSystem.Services
                         if (existingReview != null)
                             throw new InvalidOperationException($"You have already reviewed this product.");
 
-                        //add review
-                        var review = new Review
+                        // AutoMapper
+                        var review = _mapper.Map<Review>(reviewDTO, opt =>
                         {
-                            PID = pid,
-                            UID = uid,
-                            Comment = reviewDTO.Comment,
-                            Rating = reviewDTO.Rating,
-                            ReviewDate = DateTime.Now
-                        };
+                            opt.Items["pid"] = pid;
+                            opt.Items["uid"] = uid;
+                        });
                         _reviewRepo.AddReview(review);
 
                         // Recalculate and update the product's overall rating
