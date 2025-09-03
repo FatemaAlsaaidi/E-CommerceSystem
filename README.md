@@ -110,5 +110,18 @@ Each User record can have multiple Review records.
         }
 
     ```
+## Services
+- Services contain business logic and interact with repositories to perform operations.
+- Example: OrderProductsService, which uses the OrderProductsRepo to manage order products.
+    ```sql
+        private readonly OrderProductsRepo _orderProductsRepo;
+        public OrderProductsService(OrderProductsRepo orderProductsRepo)
+        {
+            _orderProductsRepo = orderProductsRepo;
+        }
+    ```
+- They handle tasks such as validating data, processing orders, and managing user accounts.
+
+
 
 
