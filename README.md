@@ -283,3 +283,29 @@ Security: If the token is invalid or unreadable, the method throws an Unauthoriz
 - Users must log in to receive a token, which is then used to access protected resources.
 - The token is included in the Authorization header of HTTP requests.
 
+## API Services 
+**Order Controller**
+
+- PlaceOrder => Allows users to place a new order by providing a list of order items.
+- GetOrdersByID => Retrieves all orders placed by a specific Order ID.
+- GetAllOrders => Retrieves all orders in the system (admin access).
+
+**Product Controller**
+
+- AddProduct => Allows admins to add a new product to the catalog.
+- GetAllProducts => Retrieves a list of all products.
+- GetProductById => Retrieves details of a specific product by its ID.
+- UpdateProduct => Allows admins to update product details.
+
+**User Controller**
+- Register => Allows new users to register by providing their details.
+- Login => Authenticates users and returns a JWT token.
+- GetUserById => Retrieves user details by their ID.
+
+**Review Controller**
+- AddReview => Allows users to add a review for a product.
+- GetAllReviews => Retrieves all reviews for a specific product.
+- DeleteReview => Allows users to delete their review by its ID.
+- UpdateReview => Allows users to update their review by its ID.
+
+
