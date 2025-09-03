@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using static E_CommerceSystem.Models.ReviewDTO;
+
 namespace E_CommerceSystem.Controllers
 {
     [Authorize]
@@ -14,11 +18,14 @@ namespace E_CommerceSystem.Controllers
     {
         private readonly IReviewService _reviewService;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public ReviewController(IReviewService reviewService, IConfiguration configuration)
+
+        public ReviewController(IReviewService reviewService, IConfiguration configuration, IMapper mapper)
         {
             _reviewService = reviewService;
             _configuration = configuration;
+            _mapper = mapper;
         }
         [HttpPost("AddReview")]
         public IActionResult AddReview(int pid, ReviewDTO review)
@@ -47,42 +54,11 @@ namespace E_CommerceSystem.Controllers
 
         [AllowAnonymous]
         [HttpGet("GetAllReviews")]
-        public IActionResult GetAllReviews(
-        [FromQuery] int productId,
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10)
+        public IActionResult GetAllReviews([FromQuery] int productId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                // Validate pagination parameters
-                if (pageNumber < 1 || pageSize < 1)
-                {
-                    return BadRequest("PageNumber and PageSize must be greater than 0.");
-                }
-
-                // Call the service to get the paged and filtered products
-                var reviews = _reviewService.GetAllReviews(pageNumber, pageSize,productId);
-
-                if (reviews == null || !reviews.Any())
-                {
-                    return NotFound("No Reviews found matching the given product id.");
-                }
-
-                List<ReviewDTO> reviewOutputList = new List<ReviewDTO>();
-                var reviewOutput = new ReviewDTO();
-                foreach (var review in reviews)
-                {
-                    reviewOutput.Rating = review.Rating;
-                    reviewOutput.Comment = review.Comment;
-                    reviewOutputList.Add(reviewOutput);
-                }
-                return Ok(reviewOutputList);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while retrieving reviews. {ex.Message}");
-            }
+            var reviews = _reviewService.GetAllReviews(pageNumber, pageSize, productId);
+            var dtos = _mapper.Map<List<ReviewReadDto>>(reviews);
+            return Ok(dtos);
         }
 
         [HttpDelete("DeleteReview/{ReviewId}")]
