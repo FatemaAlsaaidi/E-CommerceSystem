@@ -9,5 +9,10 @@ namespace E_CommerceSystem.Models
         public string? ContactInfo { get; set; }
         [Required]
         public int SupplierId { get; set; }
+
+        public record SupplierCreateDto(string Name, string? ContactEmail, string? Phone);
+        public record SupplierUpdateDto(string Name, string? ContactEmail, string? Phone);
+        public record SupplierReadDto(int SupplierId, string Name, string? ContactEmail, string? Phone);
+
     }
 }

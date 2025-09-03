@@ -16,5 +16,19 @@ namespace E_CommerceSystem.Models
         [Required]
         [Range(0, int.MaxValue)]
         public int Stock { get; set; }
+
+        public record ProductReadDto(
+            int PID, string ProductName, string? Description, decimal Price, int Stock,
+            int? CategoryId, string? CategoryName,
+            int? SupplierId, string? SupplierName
+        );
+        public record ProductCreateDto(
+            string ProductName, string? Description, decimal Price, int Stock,
+            int? CategoryId, int? SupplierId
+        );
+        public record ProductUpdateDto(
+            string ProductName, string? Description, decimal Price, int Stock,
+            int? CategoryId, int? SupplierId
+        );
     }
 }

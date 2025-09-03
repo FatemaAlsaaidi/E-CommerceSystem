@@ -10,6 +10,12 @@ namespace E_CommerceSystem.Models
         [Required]
         public int CategoryId { get; set; }
 
+        // Records for AutoMapper
+        public record CategoryCreateDto(string Name, string? Description); 
+        public record CategoryUpdateDto(string Name, string? Description);
+        public record CategoryReadDto(int CategoryId, string Name, string? Description);
+
+
     }
 
 
