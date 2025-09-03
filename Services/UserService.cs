@@ -1,6 +1,7 @@
 ﻿using E_CommerceSystem.Models;
 using E_CommerceSystem.Repositories;
 
+
 namespace E_CommerceSystem.Services
 {
     public class UserService : IUserService
@@ -16,6 +17,8 @@ namespace E_CommerceSystem.Services
         {
             _userRepo.AddUser(user);
         }
+
+
         public void DeleteUser(int uid)
         {
             var user = _userRepo.GetUserById(uid);

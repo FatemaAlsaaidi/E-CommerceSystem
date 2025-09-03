@@ -6,6 +6,10 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Security.Cryptography;
 
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
+
 namespace E_CommerceSystem.Services
 {
     public class OrderService : IOrderService
@@ -13,12 +17,15 @@ namespace E_CommerceSystem.Services
         private readonly IOrderRepo _orderRepo;
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
+        private readonly IMapper _mapper;
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService)
+
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
+            _mapper = mapper;
         }
 
         //get all orders for login user
@@ -132,7 +139,7 @@ namespace E_CommerceSystem.Services
                     throw new Exception($"{items[i].ProductName} is out of stock");
 
             }
-            // Create a new order for the user
+            // Create a new order for the user using auto mapping 
             var order = new Order { UID = uid, OrderDate = DateTime.Now, TotalAmount = 0 };
             AddOrder(order); // Save the order to the database
 

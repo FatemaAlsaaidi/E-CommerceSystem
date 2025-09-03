@@ -3,6 +3,10 @@ using E_CommerceSystem.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
+
 namespace E_CommerceSystem.Services
 {
     public class ProductService : IProductService

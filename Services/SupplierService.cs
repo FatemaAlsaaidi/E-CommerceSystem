@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using System.Security.Cryptography;
 using AutoMapper;
 
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
+
 
 namespace E_CommerceSystem.Services
 {
