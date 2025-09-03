@@ -1,6 +1,10 @@
 ﻿using E_CommerceSystem.Models;
 using E_CommerceSystem.Repositories;
 
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
+
 namespace E_CommerceSystem.Services
 {
     public class OrderProductsService : IOrderProductsService
