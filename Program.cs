@@ -35,6 +35,13 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<IReviewRepo, ReviewRepo>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
 
+            builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+            builder.Services.AddScoped<ISupplierRepo, SupplierRepo>();
+            builder.Services.AddScoped<ISupplierService, SupplierService>();
+
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -101,6 +108,7 @@ namespace E_CommerceSystem
                 app.UseSwaggerUI();
             }
 
+           
             app.UseHttpsRedirection();
 
             app.UseAuthentication(); //jwt check middleware
