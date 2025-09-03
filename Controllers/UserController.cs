@@ -6,6 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static E_CommerceSystem.Models.UserDTO;
+
+using AutoMapper;
+using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
+using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
 
 namespace E_CommerceSystem.Controllers
 {
@@ -16,41 +21,23 @@ namespace E_CommerceSystem.Controllers
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public UserController(IUserService userService, IConfiguration configuration)
+        public UserController(IUserService userService, IConfiguration configuration, IMapper mapper)
         {
             _userService = userService;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public IActionResult Register(UserDTO InputUser)
+        public IActionResult Register(UserRegisterDto dto)
         {
-            try
-            {
-                if(InputUser == null)
-                    return BadRequest("User data is required");
-
-                var user = new User
-                {
-                    UName = InputUser.UName,
-                    Email = InputUser.Email,
-                    Password = InputUser.Password,
-                    Role = InputUser.Role,
-                    Phone = InputUser.Phone,
-                    CreatedAt = DateTime.Now
-                };
-
-                _userService.AddUser(user);
-
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while adding the user. {ex.Message} ");
-            }
+            var user = _mapper.Map<User>(dto); // Password hashing happens in the service/repo
+            _userService.AddUser(user);
+            var read = _mapper.Map<UserReadDto>(user);
+            return CreatedAtAction(nameof(GetUserById), new { uid = user.UID }, read);
         }
 
 
@@ -73,21 +60,23 @@ namespace E_CommerceSystem.Controllers
 
         }
 
-
-        [HttpGet("GetUserById/{UserID}")]
-        public IActionResult GetUserById(int UserID)
+        [AllowAnonymous]
+        [HttpGet("GetAllUsers")]
+        public IActionResult GetAll()
         {
-            try
-            {
-                var user = _userService.GetUserById(UserID);
-                return Ok(user);
-   
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while retrieving user. {(ex.Message)}");
-            }
+            var users = _userService.GetAllUsers();
+            var dtos = _mapper.Map<List<UserReadDto>>(users);
+            return Ok(dtos);
+        }
+
+
+        [Authorize]
+        [HttpGet("GetUserById")]
+        public IActionResult GetUserById(int uid)
+        {
+            var user = _userService.GetUserById(uid);
+            var dto = _mapper.Map<UserReadDto>(user);
+            return Ok(dto);
         }
 
         [NonAction]
