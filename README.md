@@ -31,6 +31,22 @@ c. Audience: The recipients that the token is intended for.
 
 d. Expiration Time: How long the token remains valid before it expires.
 
+## Launch Settings
+- The launchSettings.json file is a configuration file located in the Properties folder of a .NET project. Its purpose is to define and manage how the application is launched and debugged during local development.
+
+- It's important to understand that these settings are not used in production and are typically not deployed with the application.
+
+- Key configurations found in launchSettings.json often include:
+
+1. Launch Profiles: The file can define multiple launch profiles, each with its own set of settings. This allows developers to quickly switch between different ways of running the application (e.g., using IIS Express, Kestrel, or Docker).
+
+2. Application URL: Specifies the URL and port where the application will be hosted during development (e.g., http://localhost:5000).
+
+3. Environment Variables: Sets environment-specific variables that are needed for the application to run correctly in a development context, such as ASPNETCORE_ENVIRONMENT=Development.
+
+4. Command Line Arguments: Defines command-line arguments that should be passed to the application when it starts.
+
+5. Launch Browser: A boolean setting that determines whether a web browser should automatically open when the application is launched for debugging.
 
 ## Models With Data annotaions and value validation 
 *note*
