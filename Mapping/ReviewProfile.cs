@@ -11,6 +11,8 @@ namespace E_CommerceSystem.Mapping
             CreateMap<ReviewCreateDto, Review>();
             CreateMap<ReviewUpdateDto, Review>();
             CreateMap<Review, ReviewReadDto>();
+
+           
         }
     }
 }

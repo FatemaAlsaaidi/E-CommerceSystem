@@ -13,6 +13,7 @@ namespace E_CommerceSystem.Mapping
             CreateMap<UserRegisterDto, User>()
                 .ForMember(d => d.Password, o => o.Ignore()); // hash elsewhere; don't map plain password
 
+            
         }
     }
 }
