@@ -7,6 +7,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using AutoMapper; // Add this using directive for AutoMapper
+using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
+
 //using static E_CommerceSystem.Mapping.CategoryProfile;
 //using static E_CommerceSystem.Mapping.OrderProfile;
 //using static E_CommerceSystem.Mapping.ProductProfile;
@@ -47,9 +50,15 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<ISupplierRepo, SupplierRepo>();
             builder.Services.AddScoped<ISupplierService, SupplierService>();
 
+            builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
+
+
 
             // Auto Mapper Configurations
             builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+
+
+
 
 
 
@@ -66,79 +75,54 @@ namespace E_CommerceSystem
                   .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add JWT Authentication
-            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JwtSettings:SecretKey is missing.");
+            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            //var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JwtSettings:SecretKey is missing.");
 
 
             //// Add JWT Authentication
-            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            //var secretKey = jwtSettings["SecretKey"];
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["SecretKey"];
+
+
 
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                    .AddJwtBearer(options =>
-                    {
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
-                            ValidateAudience = false, // You can set this to true if you want to validate the audience.
-                            ValidateLifetime = true, // Ensures the token hasn't expired.
-                            ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
-                        };
-                        // Read token from cookie if Authorization header is missing
-                        options.Events = new JwtBearerEvents
-                        {
-                            OnMessageReceived = context =>
-                            {
-                                if (string.IsNullOrEmpty(context.Token))
-                                {
-                                    var cookieToken = context.Request.Cookies["access_token"];
-                                    if (!string.IsNullOrEmpty(cookieToken))
-                                    {
-                                        context.Token = cookieToken;
-                                    }
-                                }
-                                return Task.CompletedTask;
-                            }
-                        };
-                    });
+                     .AddJwtBearer(options =>
+                     {
+                         options.TokenValidationParameters = new TokenValidationParameters
+                         {
+                             ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
+                             ValidateAudience = false, // You can set this to true if you want to validate the audience.
+                             ValidateLifetime = true, // Ensures the token hasn't expired.
+                             ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
+                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
+                         };
+                         // Read token from cookie if Authorization header is missing
+                         options.Events = new JwtBearerEvents
+                         {
+                             OnMessageReceived = context =>
+                             {
+                                 if (string.IsNullOrEmpty(context.Token))
+                                 {
+                                     var cookieToken = context.Request.Cookies["access_token"];
+                                     if (!string.IsNullOrEmpty(cookieToken))
+                                     {
+                                         context.Token = cookieToken;
+                                     }
+                                 }
+                                 return Task.CompletedTask;
+                             }
+                         };
+                     });
+            builder.Services.AddAuthorization(o =>
+            {
+                o.AddPolicy("Reports.Read", p => p.RequireRole("Admin", "Manager"));
 
-            //builder.Services.AddAuthentication(options =>
-            //{
-            //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            //})
-            //         .AddJwtBearer(options =>
-            //         {
-            //             options.TokenValidationParameters = new TokenValidationParameters
-            //             {
-            //                 ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
-            //                 ValidateAudience = false, // You can set this to true if you want to validate the audience.
-            //                 ValidateLifetime = true, // Ensures the token hasn't expired.
-            //                 ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
-            //                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
-            //             };
-            //             // Read token from cookie if Authorization header is missing
-            //             options.Events = new JwtBearerEvents
-            //             {
-            //                 OnMessageReceived = context =>
-            //                 {
-            //                     if (string.IsNullOrEmpty(context.Token))
-            //                     {
-            //                         var cookieToken = context.Request.Cookies["access_token"];
-            //                         if (!string.IsNullOrEmpty(cookieToken))
-            //                         {
-            //                             context.Token = cookieToken;
-            //                         }
-            //                     }
-            //                     return Task.CompletedTask;
-            //                 }
-            //             };
-            //         });
+                // o.AddPolicy("Reports.Read", p => p.RequireClaim("permission", "reports.read"));
+            });
 
             builder.Services.AddEndpointsApiExplorer();
 
@@ -178,7 +162,7 @@ namespace E_CommerceSystem
 
 
             var app = builder.Build();
-
+            
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
