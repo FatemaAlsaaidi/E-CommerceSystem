@@ -27,7 +27,7 @@ namespace E_CommerceSystem.Services
 
         public List<OrderProducts> GetOrdersByOrderId(int oid)
         {
-            return _orderProductsRepo.GetOrdersByOrderId(oid);
+            return _orderProductsRepo.GetOrdersByOrderId(oid).ToList();
         }
     }
 }
