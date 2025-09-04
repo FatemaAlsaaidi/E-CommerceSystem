@@ -31,6 +31,10 @@ namespace E_CommerceSystem
             modelBuilder.Entity<Supplier>()
                         .HasIndex(s => s.Name)
                         .IsUnique();
+            modelBuilder.Entity<Order>()
+                        .Property(o => o.Status)
+                        .HasConversion<string>()
+                        .HasMaxLength(20); 
 
         }
     }
