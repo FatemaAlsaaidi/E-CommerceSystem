@@ -38,7 +38,7 @@ namespace E_CommerceSystem.Services
         {
             // check if category already exist 
             var existingCategory = _categoryRepo.GetCategoryByName(categoryDTO.Name);
-            if (existingCategory == null)
+            if (existingCategory != null)
                 throw new InvalidOperationException($"Category with name {categoryDTO.Name} already exists.");
             // Map DTO to entity
             var category = _mapper.Map<Category>(categoryDTO);
