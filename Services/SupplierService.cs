@@ -38,24 +38,27 @@ namespace E_CommerceSystem.Services
                 throw new KeyNotFoundException($"Supplier with ID {sid} not found.");
             return supplier;
         }
-        public void AddSupplier(SupplierDTO supplierDTO)
+        public void AddSupplier(SupplierDTO dto)
         {
-            // check if supplier already exist 
-            var existingSupplier = _supplierRepo.GetSupplierByName(supplierDTO.Name);
-            if (existingSupplier != null)
-                throw new InvalidOperationException($"Supplier with name {supplierDTO.Name} already exists.");
-            // Map DTO to entity
-            var supplier = _mapper.Map<Supplier>(supplierDTO);
+            var exists = _supplierRepo.GetSupplierByName(dto.Name);
+            if (exists == null) throw new InvalidOperationException($"Supplier with name {dto.Name} already exists.");
+
+            var supplier = new Supplier
+            {
+                Name = dto.Name,
+                ContactEmail = dto.ContactInfo   // dto only has ContactInfo
+                                                 // Phone stays null unless you add it to the DTO
+            };
             _supplierRepo.AddSupplier(supplier);
         }
-        public void UpdateSupplier(int sid, SupplierDTO supplierDTO)
+        public void UpdateSupplier(int sid, SupplierDTO dto)
         {
-            var existingSupplier = _supplierRepo.GetSupplierById(sid);
-            if (existingSupplier == null)
-                throw new KeyNotFoundException($"Supplier with ID {sid} not found.");
-            // Map updated fields from DTO to the existing entity
-            _mapper.Map(supplierDTO, existingSupplier);
-            _supplierRepo.UpdateSupplier(existingSupplier);
+            var supplier = _supplierRepo.GetSupplierById(sid)
+        ?? throw new KeyNotFoundException($"Supplier with ID {sid} not found.");
+
+            supplier.Name = dto.Name;
+            supplier.ContactEmail = dto.ContactInfo;
+            _supplierRepo.UpdateSupplier(supplier);
         }
         public void DeleteSupplier(int sid)
         {
