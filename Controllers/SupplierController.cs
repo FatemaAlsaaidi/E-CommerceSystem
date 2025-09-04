@@ -5,106 +5,46 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using System.IdentityModel.Tokens.Jwt;
 
+
 namespace E_CommerceSystem.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class SupplierController : ControllerBase
     {
         private readonly ISupplierService _svc;
         public SupplierController(ISupplierService svc) => _svc = svc;
 
+        [AllowAnonymous]
         [HttpGet("GetAllSuppliers")]
-        public IActionResult GetAllSuppliers(int pageNumber = 1, int pageSize = 100)
-        {
-            try
-            {
-                var suppliers = _svc.GetAllSuppliers(pageNumber, pageSize);
-                return Ok(suppliers);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while retrieving suppliers. {ex.Message}");
-            }
-        }
-        [HttpGet("GetSupplierById/{sid}")]
-        public IActionResult GetSupplier(int id)
-        {
-            try
-            {
-                var supplier = _svc.GetSupplierById(id);
-                return Ok(supplier);
-            }
-            catch (KeyNotFoundException knfEx)
-            {
-                return NotFound(knfEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while retrieving the supplier. {ex.Message}");
-            }
-        }
+        public IActionResult GetAllSuppliers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 100)
+            => Ok(_svc.GetAllSuppliers(pageNumber, pageSize));
 
-        // Add Supplier
+        [AllowAnonymous]
+        [HttpGet("GetSupplierById/{sid:int}")]
+        public IActionResult GetSupplier([FromRoute] int sid)
+            => Ok(_svc.GetSupplierById(sid));
+
+        [HttpPost("AddSupplier")]
+
         public IActionResult AddSupplier([FromBody] SupplierDTO supplierDTO)
         {
-            try
-            {
-                if (supplierDTO == null || string.IsNullOrWhiteSpace(supplierDTO.Name))
-                {
-                    return BadRequest("Supplier data is invalid.");
-                }
-                _svc.AddSupplier(supplierDTO);
-                return Ok("Supplier added successfully.");
-            }
-            catch (InvalidOperationException invOpEx)
-            {
-                return Conflict(invOpEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while adding the supplier. {ex.Message}");
-            }
+            _svc.AddSupplier(supplierDTO);
+            return Ok("Supplier added successfully.");
         }
 
-        // Update Supplier
-        public IActionResult UpdateSupplier(int id, SupplierDTO supplierDTO)
+        [HttpPut("UpdateSupplier/{sid:int}")]
+        public IActionResult UpdateSupplier([FromRoute] int sid, [FromBody] SupplierDTO supplierDTO)
         {
-            try
-            {
-                if (supplierDTO == null || string.IsNullOrWhiteSpace(supplierDTO.Name))
-                {
-                    return BadRequest("Supplier data is invalid.");
-                }
-                _svc.UpdateSupplier(id, supplierDTO);
-                return Ok("Supplier updated successfully.");
-            }
-            catch (KeyNotFoundException knfEx)
-            {
-                return NotFound(knfEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while updating the supplier. {ex.Message}");
-            }
+            _svc.UpdateSupplier(sid, supplierDTO);
+            return Ok("Supplier updated successfully.");
         }
 
-        // Delete Supplier 
-        public IActionResult DeleteSupplier(int id) 
+        [HttpDelete("DeleteSupplier/{sid:int}")]
+        public IActionResult DeleteSupplier([FromRoute] int sid)
         {
-            try
-            {
-                _svc.DeleteSupplier(id);
-                return Ok("Supplier deleted successfully.");
-            }
-            catch (KeyNotFoundException knfEx)
-            {
-                return NotFound(knfEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while deleting the supplier. {ex.Message}");
-            }
-
+            _svc.DeleteSupplier(sid);
+            return Ok("Supplier deleted successfully.");
         }
-
     }
 }

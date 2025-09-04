@@ -50,8 +50,10 @@ namespace E_CommerceSystem.Controllers
         }
 
 
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("AddCategory")]
+        [Consumes("application/json")]
+
         public IActionResult AddCategory([FromBody] CategoryDTO categoryDTO)
         {
             try

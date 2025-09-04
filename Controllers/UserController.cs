@@ -89,7 +89,7 @@ namespace E_CommerceSystem.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.Name, username),
-                new Claim(JwtRegisteredClaimNames.UniqueName, role),
+                new Claim(ClaimTypes.Role, role),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
 
             };
@@ -105,6 +105,38 @@ namespace E_CommerceSystem.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        //    [NonAction]
+        //    public string GenerateJwtToken(string userId, string username, string role)
+        //    {
+        //        var jwt = _configuration.GetSection("Jwt");
+        //        var keyString = jwt["Key"]!;
+        //        var issuer = jwt["Issuer"]!;
+        //        var audience = jwt["Audience"]!;
+        //        var expiryMin = double.Parse(jwt["ExpiryInMinutes"]!);
+
+        //        var claims = new[]
+        //        {
+        //    new Claim(JwtRegisteredClaimNames.Sub, userId),
+        //    new Claim(JwtRegisteredClaimNames.Name, username),
+        //    new Claim(ClaimTypes.Role, role),
+        //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        //};
+
+        //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
+        //        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        //        var token = new JwtSecurityToken(
+        //            issuer: issuer,
+        //            audience: audience,
+        //            claims: claims,
+        //            expires: DateTime.UtcNow.AddMinutes(expiryMin),
+        //            signingCredentials: creds
+        //        );
+
+        //        return new JwtSecurityTokenHandler().WriteToken(token);
+        //    }
+
 
 
     }
