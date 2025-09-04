@@ -26,7 +26,7 @@ namespace E_CommerceSystem.Models
         public int? SupplierId { get; set; }
         public record ProductReadDto(
             int PID, string ProductName, string? Description, decimal Price, int Stock,
-            int? CategoryId,
+            int? CategoryId, string ? CategoryName, string? SupplierName,
             int? SupplierId
         );
         public record ProductCreateDto(

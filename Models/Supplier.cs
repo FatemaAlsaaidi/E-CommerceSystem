@@ -12,7 +12,7 @@ namespace E_CommerceSystem.Models
         public string? ContactEmail { get; set; } // ? means this attribute accept null value
         public string? Phone { get; set; }
         [JsonIgnore]
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>(); // use virtual for lazy loading
     }
 
 }

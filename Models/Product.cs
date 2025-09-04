@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace E_CommerceSystem.Models
+
 {
     public class Product
     {
@@ -28,14 +29,14 @@ namespace E_CommerceSystem.Models
         public virtual ICollection<OrderProducts> OrderProducts { get;set; }
 
         [JsonIgnore]
-        public virtual ICollection<Review> Reviews { get; set; }
+        public virtual ICollection<Review> Reviews { get; set; } // use virtual for lazy loading
 
         [ForeignKey("Category")]
         public int? CategoryId { get; set; }
-        public Category? Category { get; set; }
+        public virtual Category? Category { get; set; } // use virtual for lazy loading
 
         [ForeignKey("Supplier")]
         public int? SupplierId { get; set; }
-        public Supplier? Supplier { get; set; }
+        public virtual Supplier? Supplier { get; set; } // use virtual for lazy loading
     }
 }

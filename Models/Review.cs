@@ -21,12 +21,12 @@ namespace E_CommerceSystem.Models
         public int UID { get; set; }
 
         [JsonIgnore]
-        public User user { get; set; }
+        public virtual User user { get; set; } // use virtual for lazy loading
 
         [ForeignKey("product")]
         public int PID { get; set; }
 
         [JsonIgnore]
-        public Product product { get; set; }
+        public virtual Product product { get; set; } // use virtual for lazy loading
     }
 }

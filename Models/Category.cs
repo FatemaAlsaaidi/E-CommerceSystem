@@ -11,6 +11,7 @@ namespace E_CommerceSystem.Models
         public string Name { get; set; } = default!;
         public string? Description { get; set; }
         [JsonIgnore]
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+     
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>(); // use virtual for lazy loading
     }
 }

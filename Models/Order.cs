@@ -15,9 +15,9 @@ namespace E_CommerceSystem.Models
 
         [ForeignKey("user")]
         public int UID { get; set; }
-        public User user { get; set; }
+        public virtual User user { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection <OrderProducts> OrderProducts { get; set; }
+        public virtual ICollection <OrderProducts> OrderProducts { get; set; } // use virtual for lazy loading
     }
 }

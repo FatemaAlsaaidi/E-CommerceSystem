@@ -17,13 +17,13 @@ namespace E_CommerceSystem.Models
 
         public int OID { get; set; }
         [JsonIgnore]
-        public Order Order { get; set; }
+        public virtual Order Order { get; set; } // virtual for lazy loading
 
-        
+
         [ForeignKey("Product")]
         public int PID { get; set; }
         [JsonIgnore]
-        public Product product { get; set; }
+        public virtual Product product { get; set; } // virtual for lazy loading
     }
 }
 
