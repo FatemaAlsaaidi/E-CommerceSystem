@@ -7,6 +7,12 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using AutoMapper; // Add this using directive for AutoMapper
+//using static E_CommerceSystem.Mapping.CategoryProfile;
+//using static E_CommerceSystem.Mapping.OrderProfile;
+//using static E_CommerceSystem.Mapping.ProductProfile;
+//using static E_CommerceSystem.Mapping.ReviewProfile;
+//using static E_CommerceSystem.Mapping.SupplierProfile;
+//using static E_CommerceSystem.Mapping.UserProfile;
 
 
 namespace E_CommerceSystem
@@ -42,12 +48,31 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<ISupplierService, SupplierService>();
 
 
+            // Auto Mapper Configurations
+            builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+
+
+
+
+
+
+
+
+            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                  options.UseLazyLoadingProxies() //to enable lazy loading ...
+                  .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"];
+            var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JwtSettings:SecretKey is missing.");
+
+
+            //// Add JWT Authentication
+            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            //var secretKey = jwtSettings["SecretKey"];
 
             builder.Services.AddAuthentication(options =>
             {
@@ -64,20 +89,73 @@ namespace E_CommerceSystem
                             ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
                         };
+                        // Read token from cookie if Authorization header is missing
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                if (string.IsNullOrEmpty(context.Token))
+                                {
+                                    var cookieToken = context.Request.Cookies["access_token"];
+                                    if (!string.IsNullOrEmpty(cookieToken))
+                                    {
+                                        context.Token = cookieToken;
+                                    }
+                                }
+                                return Task.CompletedTask;
+                            }
+                        };
                     });
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            //builder.Services.AddAuthentication(options =>
+            //{
+            //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            //})
+            //         .AddJwtBearer(options =>
+            //         {
+            //             options.TokenValidationParameters = new TokenValidationParameters
+            //             {
+            //                 ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
+            //                 ValidateAudience = false, // You can set this to true if you want to validate the audience.
+            //                 ValidateLifetime = true, // Ensures the token hasn't expired.
+            //                 ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
+            //                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
+            //             };
+            //             // Read token from cookie if Authorization header is missing
+            //             options.Events = new JwtBearerEvents
+            //             {
+            //                 OnMessageReceived = context =>
+            //                 {
+            //                     if (string.IsNullOrEmpty(context.Token))
+            //                     {
+            //                         var cookieToken = context.Request.Cookies["access_token"];
+            //                         if (!string.IsNullOrEmpty(cookieToken))
+            //                         {
+            //                             context.Token = cookieToken;
+            //                         }
+            //                     }
+            //                     return Task.CompletedTask;
+            //                 }
+            //             };
+            //         });
+
             builder.Services.AddEndpointsApiExplorer();
+
+
 
             builder.Services.AddSwaggerGen(c =>
             {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "E-Commerce API", Version = "v1" });
+                // Use HTTP Bearer so Swagger auto-prefixes "Bearer "
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using the Bearer scheme (Example: 'Bearer <token>')",
+                    Description = "Paste ONLY your JWT below. Swagger will add 'Bearer ' automatically.",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer"
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -91,13 +169,13 @@ namespace E_CommerceSystem
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            //new string[] {}
+            Array.Empty<string>()
         }
     });
             });
 
-            // Auto Mapper Configurations
-            builder.Services.AddAutoMapper(typeof(Program));
+
 
             var app = builder.Build();
 
@@ -108,7 +186,6 @@ namespace E_CommerceSystem
                 app.UseSwaggerUI();
             }
 
-           
             app.UseHttpsRedirection();
 
             app.UseAuthentication(); //jwt check middleware
