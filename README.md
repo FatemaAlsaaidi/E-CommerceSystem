@@ -428,8 +428,9 @@ For all the models / DTOs in the system use the Auto mapper instead of manual ma
 4. DTOs: Create Create/Update/Read DTOs for Category & Supplier (and adjust Product DTOs to include Category/Supplier)
 
 5. AutoMapper: add Profiles; register in DI
+
  - install autoMapperBackage
-AutoMapper.Extensions.Microsoft.DependencyInjection
+ 
 [](img/AutoMapperBackage1.JPG) 
 
 - In program 
@@ -471,3 +472,105 @@ var review = _mapper.Map<Review>(reviewDTO, opt =>
 ```
 9. Controllers: full CRUD + pagination; use AutoMapper everywhere
 
+### the main change should make to convert auto mapper from manual mapping 
+1. change in the service layer and also in Controllers layer through replace manual mapping code with AutoMapper mapping code by using the _mapper instance to map between DTOs and entities 
+- Example : create Reviewprofile
+```sql
+ // Mapping/ReviewProfile.cs
+using AutoMapper;
+
+public class ReviewProfile : Profile
+{
+    public ReviewProfile()
+    {
+        CreateMap<ReviewDto, Review>()
+            .ForMember(d => d.PID,
+                o => o.MapFrom((src, dest, _, ctx) => (int)ctx.Items["pid"]))
+            .ForMember(d => d.UID,
+                o => o.MapFrom((src, dest, _, ctx) => (int)ctx.Items["uid"]))
+            .ForMember(d => d.ReviewDate,
+                o => o.MapFrom(_ => DateTime.UtcNow));
+    }
+}
+
+```
+- Example : change in the service layer 
+```sql
+public Review AddReview(int pid, int uid, ReviewDto reviewDTO)
+{
+    var review = _mapper.Map<Review>(reviewDTO, opt =>
+    {
+        opt.Items["pid"] = pid;
+        opt.Items["uid"] = uid;
+    });
+    return _reviewRepo.AddReview(review);
+}
+```
+- In above example the manual mapping code is commented out and replaced with AutoMapper mapping code.
+- The AutoMapper mapping code uses the _mapper instance to map the ReviewDto to a Review entity, passing in the pid and uid as additional context items.
+- This approach simplifies the mapping process and reduces boilerplate code, making it easier to maintain and extend the service layer.
+
+
+2 .Swagger config: use the HTTP Bearer scheme (not ApiKey)
+- In program file 
+old :
+```sql
+builder.Services.AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme (Example: 'Bearer <token>')",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+            });
+```
+this old setting make swagger not able to authorize the user by token , just work when put bearer token in the authorize button
+new :
+```sql
+  builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ECommerceSystem", Version = "v1" });
+    // Add JWT Bearer token support in Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter JWT with Bearer into field",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+```
+- With SecuritySchemeType.Http + Scheme = "bearer", you’ll paste the raw token (no “Bearer ”) and Swagger will handle the header properly.
