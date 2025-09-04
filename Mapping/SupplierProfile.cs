@@ -2,12 +2,17 @@ using AutoMapper;
 using E_CommerceSystem.Models;
 using static E_CommerceSystem.Models.SupplierDTO;
 
-public class SupplierProfile : Profile
+namespace E_CommerceSystem.Mapping
 {
-    public SupplierProfile()
+
+
+    public class SupplierProfile : Profile
     {
-        CreateMap<SupplierCreateDto, Supplier>();
-        CreateMap<SupplierUpdateDto, Supplier>();
-        CreateMap<Supplier, SupplierReadDto>();
+        public SupplierProfile()
+        {
+            CreateMap<SupplierCreateDto, Supplier>();
+            CreateMap<SupplierUpdateDto, Supplier>();
+            CreateMap<Supplier, SupplierReadDto>();
+        }
     }
 }

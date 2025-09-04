@@ -1,12 +1,16 @@
 using AutoMapper;
 using E_CommerceSystem.Models;
 using static E_CommerceSystem.Models.ReviewDTO;
-public class ReviewProfile : Profile
+
+namespace E_CommerceSystem.Mapping
 {
-    public ReviewProfile()
+    public class ReviewProfile : Profile
     {
-        CreateMap<ReviewCreateDto, Review>();
-        CreateMap<ReviewUpdateDto, Review>();
-        CreateMap<Review, ReviewReadDto>();
+        public ReviewProfile()
+        {
+            CreateMap<ReviewCreateDto, Review>();
+            CreateMap<ReviewUpdateDto, Review>();
+            CreateMap<Review, ReviewReadDto>();
+        }
     }
 }

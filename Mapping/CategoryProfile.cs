@@ -2,12 +2,15 @@ using AutoMapper;
 using E_CommerceSystem.Models;
 using static E_CommerceSystem.Models.CategoryDTO;
 
-public class CategoryProfile : Profile
+namespace E_CommerceSystem.Mapping
 {
-    public CategoryProfile()
+    public class CategoryProfile : Profile
     {
-        CreateMap<CategoryCreateDto, Category>();
-        CreateMap<CategoryUpdateDto, Category>();
-        CreateMap<CategoryReadDto, CategoryReadDto>();
+        public CategoryProfile()
+        {
+            CreateMap<CategoryCreateDto, Category>();
+            CreateMap<CategoryUpdateDto, Category>();
+            CreateMap<CategoryReadDto, CategoryReadDto>();
+        }
     }
 }
