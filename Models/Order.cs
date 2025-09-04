@@ -13,11 +13,23 @@ namespace E_CommerceSystem.Models
 
         public decimal TotalAmount { get; set; }
 
+        public OrderStatus Status { get; set; }  
+
         [ForeignKey("user")]
         public int UID { get; set; }
         public virtual User user { get; set; }
 
+
         [JsonIgnore]
         public virtual ICollection <OrderProducts> OrderProducts { get; set; } // use virtual for lazy loading
+    }
+
+    public enum OrderStatus
+    {
+        Pending = 0,
+        Paid = 1,
+        Shipped = 2,
+        Delivered = 3,
+        Cancelled = 4
     }
 }
