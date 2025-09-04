@@ -574,3 +574,34 @@ new :
 });
 ```
 - With SecuritySchemeType.Http + Scheme = "bearer", you’ll paste the raw token (no “Bearer ”) and Swagger will handle the header properly.
+
+### UseLazyLoadingProxies() (DbContext)
+Use Lazy Loading Proxies in Entity Framework Core to enable lazy loading of related entities. This means that related data is automatically loaded from the database when it is accessed for the first time, rather than being loaded upfront.
+- In program file
+- old :
+```sql
+ builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+```
+- new :
+```sql
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseLazyLoadingProxies()
+           .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+```
+
+**Steps To Apply Lazy Loading Proxies:**
+
+1. Install the package:
+```sql
+dotnet add package Microsoft.EntityFrameworkCore.Proxies
+```
+
+2. Make navigation properties virtual.
+
+3. Register:
+```sql
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseLazyLoadingProxies()
+           .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+```
