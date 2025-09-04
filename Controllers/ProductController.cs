@@ -32,99 +32,51 @@ namespace E_CommerceSystem.Controllers
             _mapper = mapper;
         }
 
+
+        [Authorize(Roles = "Admin")]
         [HttpPost("AddProduct")]
-        public IActionResult AddNewProduct(ProductDTO productInput)
+        public IActionResult AddNewProduct([FromBody] ProductDTO productInput)
         {
-            try
-            {
-                // Retrieve the Authorization header from the request
-                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (productInput is null) return BadRequest("Product data is required.");
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-                // Decode the token to check user role
-                var userRole = GetUserRoleFromToken(token);
+            var product = _mapper.Map<Product>(productInput);   
+            _productService.AddProduct(product);
 
-                // Only allow Admin users to add products
-                if (userRole != "admin")
-                {
-                    return BadRequest("You are not authorized to perform this action.");
-                }
-
-                // Check if input data is null
-                if (productInput == null)
-                {
-                    return BadRequest("Product data is required.");
-                }
-
-                // Create a new product
-                var product = new Product
-                {
-                    ProductName = productInput.ProductName,
-                    Price = productInput.Price,
-                    Description = productInput.Description,
-                    Stock = productInput.Stock,
-                    OverallRating = 0
-                };
-
-                // Add the new product to the database/service layer
-                _productService.AddProduct(product);
-
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while adding the product: {ex.Message}");
-            }
+            var readDto = _mapper.Map<ProductReadDto>(product);
+            return CreatedAtAction(nameof(GetProductByID), new { id = product.PID }, readDto);
         }
 
-        [HttpPut("UpdateProduct/{productId}")]
-        public IActionResult UpdateProduct(int productId, ProductDTO productInput)
+        [Authorize]
+        [HttpPut("UpdateProduct/{productId:int}")]
+        [Consumes("application/json")]
+        public IActionResult UpdateProduct(int productId, [FromBody] ProductUpdateDto productInput)
         {
-            try
-            {
-                // Retrieve the Authorization header from the request
-                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            // ModelState يُتحقق تلقائيًا مع [ApiController]، لكن نضيف حماية:
+            if (productInput is null) return BadRequest("Product data is required.");
 
-                // Decode the token to check user role
-                var userRole = GetUserRoleFromToken(token);
+            var product = _productService.GetProductById(productId);
+            if (product is null) return NotFound($"Product {productId} not found.");
 
-                // Only allow Admin users to add products
-                if (userRole != "admin")
-                {
-                    return BadRequest("You are not authorized to perform this action.");
-                }
+            _mapper.Map(productInput, product);
 
-                if (productInput == null)
-                    return BadRequest("Product data is required.");
 
-                var product = _productService.GetProductById(productId);
-                
-                product.ProductName = productInput.ProductName;
-                product.Price = productInput.Price;
-                product.Description = productInput.Description;
-                product.Stock = productInput.Stock;
-                 
-                _productService.UpdateProduct(product);
+            _productService.UpdateProduct(product);
 
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while updte product. {(ex.Message)}");
-            }
+           
+            var readDto = _mapper.Map<ProductReadDto>(product);
+            return Ok(readDto);
         }
 
-       
         [AllowAnonymous]
         [HttpGet("GetAllProducts")]
-        public IActionResult GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
-                                [FromQuery] string? name = null, [FromQuery] decimal? minPrice = null,
-                                [FromQuery] decimal? maxPrice = null)
+        public IActionResult GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5,
+                                    [FromQuery] string? name = null,
+                                    [FromQuery] decimal? minPrice = null,
+                                    [FromQuery] decimal? maxPrice = null)
         {
             var products = _productService.GetAllProducts(pageNumber, pageSize, name, minPrice, maxPrice);
-            var dtos = _mapper.Map<List<ProductReadDto>>(products);
-            return Ok(dtos);
+            return Ok(_mapper.Map<List<ProductReadDto>>(products));
         }
 
         [AllowAnonymous]
@@ -134,6 +86,32 @@ namespace E_CommerceSystem.Controllers
             var product = _productService.GetProductById(id);
             var dto = _mapper.Map<ProductReadDto>(product);   
             return Ok(dto);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{productId:int}/image")]
+        [RequestSizeLimit(10_000_000)] // ~10 MB
+        public async Task<IActionResult> UploadImage(int productId, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
+            var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!allowed.Contains(file.ContentType)) return BadRequest("Unsupported file type.");
+
+            var product = _productService.GetProductById(productId);
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            var saveDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "products");
+            Directory.CreateDirectory(saveDir);
+            var savePath = Path.Combine(saveDir, fileName);
+
+            using (var fs = new FileStream(savePath, FileMode.Create))
+                await file.CopyToAsync(fs);
+
+            var publicUrl = $"/uploads/products/{fileName}";
+            product.ImageUrl = publicUrl;
+            _productService.UpdateProduct(product);
+
+            return Ok(new { imageUrl = publicUrl });
         }
         private string? GetUserRoleFromToken(string token)
         {

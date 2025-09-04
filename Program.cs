@@ -162,7 +162,10 @@ namespace E_CommerceSystem
 
 
             var app = builder.Build();
-            
+            app.UseHttpsRedirection(); 
+
+            app.UseStaticFiles();
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
