@@ -9,5 +9,7 @@ namespace E_CommerceSystem.Repositories
         Product GetProductById(int pid);
         void UpdateProduct(Product product);
         Product GetProductByName(string productName);
+        IEnumerable<Product> Search(string? name, decimal? minPrice, decimal? maxPrice,
+                               int pageNumber = 1, int pageSize = 10);
     }
 }

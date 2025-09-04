@@ -1,4 +1,5 @@
 ﻿using E_CommerceSystem.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 namespace E_CommerceSystem.Repositories
@@ -73,5 +74,24 @@ namespace E_CommerceSystem.Repositories
             }
            
         }
+
+        private IQueryable<Product> Query() => _context.Products
+    .AsNoTracking()
+    .Include(p => p.Category)
+    .Include(p => p.Supplier);
+
+        public IEnumerable<Product> Search(string? name, decimal? minPrice, decimal? maxPrice, int pageNumber, int pageSize)
+        {
+            var q = Query();
+            if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.ProductName.Contains(name));
+            if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
+            if (maxPrice.HasValue) q = q.Where(p => p.Price <= maxPrice.Value);
+
+            return q.OrderBy(p => p.PID)
+                    .Skip((Math.Max(1, pageNumber) - 1) * Math.Clamp(pageSize, 1, 200))
+                    .Take(Math.Clamp(pageSize, 1, 200))
+                    .ToList();
+        }
+
     }
 }

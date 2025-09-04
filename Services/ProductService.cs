@@ -12,44 +12,52 @@ namespace E_CommerceSystem.Services
     public class ProductService : IProductService
     {
         private readonly IProductRepo _productRepo;
+        private readonly IMapper _mapper;
 
-        public ProductService(IProductRepo productRepo)
+
+        public ProductService(IProductRepo productRepo, IMapper mapper)
         {
             _productRepo = productRepo;
+            _mapper = mapper;
         }
 
 
+        //    public IEnumerable<Product> GetAllProducts(int pageNumber, int pageSize, string? name = null, decimal? minPrice = null, decimal? maxPrice = null)
+        //    {
+        //        // Base query
+        //        var query = _productRepo.GetAllProducts();
+
+        //        // Apply filters
+        //        if (!string.IsNullOrEmpty(name))
+        //        {
+        //            query = query.Where(p => p.ProductName.Contains(name, StringComparison.OrdinalIgnoreCase));
+        //        }
+
+        //        if (minPrice.HasValue)
+        //        {
+        //            query = query.Where(p => p.Price >= minPrice.Value);
+        //        }
+
+        //        if (maxPrice.HasValue)
+        //        {
+        //            query = query.Where(p => p.Price <= maxPrice.Value);
+        //        }
+
+        //        // Pagination
+        //        var pagedProducts = query
+        //            .Skip((pageNumber - 1) * pageSize)
+        //            .Take(pageSize)
+        //            .ToList();
+
+        //        return pagedProducts;
+
+        //}
+
         public IEnumerable<Product> GetAllProducts(int pageNumber, int pageSize, string? name = null, decimal? minPrice = null, decimal? maxPrice = null)
-        {
-            // Base query
-            var query = _productRepo.GetAllProducts();
-
-            // Apply filters
-            if (!string.IsNullOrEmpty(name))
-            {
-                query = query.Where(p => p.ProductName.Contains(name, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (minPrice.HasValue)
-            {
-                query = query.Where(p => p.Price >= minPrice.Value);
-            }
-
-            if (maxPrice.HasValue)
-            {
-                query = query.Where(p => p.Price <= maxPrice.Value);
-            }
-
-            // Pagination
-            var pagedProducts = query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            return pagedProducts;
-        
-    }
-         public Product GetProductById(int pid)
+        { 
+            return _productRepo.Search(name, minPrice, maxPrice, pageNumber, pageSize); 
+        }
+        public Product GetProductById(int pid)
         {
             var product = _productRepo.GetProductById(pid);
             if (product == null)
@@ -79,5 +87,8 @@ namespace E_CommerceSystem.Services
                 throw new KeyNotFoundException($"Product with Nmae {productName} not found.");
             return product;
         }
+
+        
+
     }
 }
