@@ -10,6 +10,9 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
 using Microsoft.EntityFrameworkCore;  // <-- for ToListAsync
 
+using System.Transactions;
+
+
 namespace E_CommerceSystem.Services
 {
     public class OrderService : IOrderService
@@ -18,18 +21,21 @@ namespace E_CommerceSystem.Services
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
         private readonly IMapper _mapper;
+        private readonly IEmailSender _email;
+        private readonly IUserService _userService;
 
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper)
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
+            _email = email;
         }
 
         //get all orders for login user
-        public List <OrderProducts> GetAllOrders(int uid)
+        public List<OrderProducts> GetAllOrders(int uid)
         {
             var orders = _orderRepo.GetOrderByUserId(uid);
             if (orders == null || !orders.Any())
@@ -56,7 +62,7 @@ namespace E_CommerceSystem.Services
             List<OrdersOutputOTD> items = new List<OrdersOutputOTD>();
             OrdersOutputOTD ordersOutputOTD = null;
 
-            
+
             List<OrderProducts> products = null;
             Product product = null;
             string productName = string.Empty;
@@ -85,9 +91,9 @@ namespace E_CommerceSystem.Services
                     items.Add(ordersOutputOTD);
                 }
             }
-   
+
             return items;
-     
+
         }
 
         public IEnumerable<Order> GetOrderByUserId(int uid)
@@ -118,11 +124,11 @@ namespace E_CommerceSystem.Services
         }
 
         //Places an order for the given list of items and user ID.
-        public void PlaceOrder( List<OrderItemDTO> items, int uid)
+        public void PlaceOrder(List<OrderItemDTO> items, int uid)
         {
             // Temporary variable to hold the currently processed product
             Product existingProduct = null;
-            
+
             decimal TotalPrice, totalOrderPrice = 0; // Variables to hold the total price of each item and the overall order
 
             OrderProducts orderProducts = null;
@@ -148,7 +154,7 @@ namespace E_CommerceSystem.Services
             {
                 // Retrieve the product by its name
                 existingProduct = _productService.GetProductByName(item.ProductName);
-               
+
                 // Calculate the total price for the current item
                 TotalPrice = item.Quantity * existingProduct.Price;
 
@@ -159,7 +165,7 @@ namespace E_CommerceSystem.Services
                 totalOrderPrice += TotalPrice;
 
                 // Create a relationship record between the order and product
-                orderProducts = new OrderProducts {OID = order.OID, PID = existingProduct.PID, Quantity = item.Quantity  };
+                orderProducts = new OrderProducts { OID = order.OID, PID = existingProduct.PID, Quantity = item.Quantity };
                 _orderProductsService.AddOrderProducts(orderProducts);
 
                 // Update the product's stock in the database
@@ -171,5 +177,40 @@ namespace E_CommerceSystem.Services
             UpdateOrder(order);
 
         }
+
+        public void Cancel(int oid, int uid)
+        {
+            var order = _orderRepo.GetOrderById(oid);
+            if (order == null)
+                throw new KeyNotFoundException($"order with ID {oid} not found.");
+            if (order.UID != uid)
+                throw new UnauthorizedAccessException("You are not authorized to cancel this order.");
+            // Retrieve all products associated with the order
+            var orderProducts = _orderProductsService.GetOrdersByOrderId(oid);
+            if (orderProducts == null || !orderProducts.Any())
+                throw new InvalidOperationException("No products found for this order.");
+            // Restore stock for each product in the order
+            foreach (var op in orderProducts)
+            {
+                var product = _productService.GetProductById(op.PID);
+                if (product != null)
+                {
+                    product.Stock += op.Quantity; // Restore the stock
+                    _productService.UpdateProduct(product); // Update the product in the database
+                }
+            }
+            // Delete the order
+            _orderRepo.DeleteOrder(oid);
+            // Optionally, send a cancellation email to the user
+
+            _email.SendOrderCancelled(oid);
+
+
+
+
+        }
+
+
     }
 }
+

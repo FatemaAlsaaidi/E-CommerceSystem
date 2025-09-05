@@ -12,5 +12,10 @@ namespace E_CommerceSystem.Services
         void AddOrder(Order order);
         void UpdateOrder(Order order);
        void PlaceOrder(List<OrderItemDTO> items, int uid);
+        void Cancel(int oid, int uid);
+
+
+
+
     }
 }

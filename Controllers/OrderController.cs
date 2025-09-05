@@ -2,14 +2,20 @@
 using E_CommerceSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR.Protocol;
 using System.IdentityModel.Tokens.Jwt;
+
+using System.Security.Claims;
 
 namespace E_CommerceSystem.Controllers
 {
+    public sealed class CancelOrderRequest { public string? Reason { get; set; } }
+    public sealed class UpdateOrderStatusRequest { public OrderStatus NewStatus { get; set; } }
+
     [Authorize]
     [ApiController]
     [Route("api/[Controller]")]
-    public class OrderController: ControllerBase
+    public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
 
@@ -17,6 +23,10 @@ namespace E_CommerceSystem.Controllers
         {
             _orderService = orderService;
         }
+        //----------- --  dtos
+        public sealed class CancelOrderRequest { public string? Reason { get; set; } }
+        public sealed class UpdateOrderStatusRequest { public OrderStatus NewStatus { get; set; } }
+
 
         [HttpPost("PlaceOrder")]
         public IActionResult PlaceOrder([FromBody] List<OrderItemDTO> items)
@@ -32,7 +42,7 @@ namespace E_CommerceSystem.Controllers
                 var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
                 // Decode the token to check user role
-                var userId= GetUserIdFromToken(token);
+                var userId = GetUserIdFromToken(token);
 
                 // Extract user ID 
                 int uid = int.Parse(userId);
@@ -66,7 +76,7 @@ namespace E_CommerceSystem.Controllers
 
                 // Extract user ID 
                 int uid = int.Parse(userId);
-                
+
                 return Ok(_orderService.GetAllOrders(uid));
             }
             catch (Exception ex)
@@ -91,7 +101,7 @@ namespace E_CommerceSystem.Controllers
                 // Extract user ID 
                 int uid = int.Parse(userId);
 
-                return Ok(_orderService.GetOrderById(OrderId,uid));
+                return Ok(_orderService.GetOrderById(OrderId, uid));
             }
             catch (Exception ex)
             {
@@ -100,6 +110,49 @@ namespace E_CommerceSystem.Controllers
 
             }
         }
+
+
+        //------------------------
+
+        // request bodies
+
+
+        // read user id safely from claims
+        private int GetUserId()
+        {
+            var idString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                         ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idString, out var uid))
+                throw new UnauthorizedAccessException("Invalid or missing user id claim.");
+            return uid;
+        }
+
+        // ----- ONLY ONE cancel endpoint with this route -----
+        [Authorize] // owner can cancel; service re-checks ownership
+        [HttpPost("{orderId:int}/cancel")]
+        public IActionResult Cancel(int orderId, [FromBody] CancelOrderRequest? body)
+        {
+            var uid = GetUserId();
+            _orderService.Cancel(orderId, uid);
+            return Ok("Order cancelled.");
+        }
+
+        //// ----- ONLY ONE status endpoint with this route -----
+        //[Authorize(Roles = "Admin")] // or "admin" – match the exact role value in your JWT
+        //[HttpPost("{orderId:int}/status")]
+        //public IActionResult UpdateStatus(int orderId, [FromBody] UpdateOrderStatusRequest body)
+        //{
+        //    var uid = GetUserId();
+        //    _orderService.UpdateOrderStatus(orderId, body.NewStatus, uid);
+        //    return Ok($"Order status set to {body.NewStatus}.");
+        //}
+
+
+
+        //-------------------------
+
+
 
         // Method to decode token to get user id
         private string? GetUserIdFromToken(string token)

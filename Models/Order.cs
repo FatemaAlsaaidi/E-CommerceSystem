@@ -13,7 +13,9 @@ namespace E_CommerceSystem.Models
 
         public decimal TotalAmount { get; set; }
 
-        public OrderStatus Status { get; set; }  
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+        public DateTime? CancelledAt { get; set; }
+        public string? CancelReason { get; set; }
 
         [ForeignKey("user")]
         public int UID { get; set; }
@@ -31,5 +33,7 @@ namespace E_CommerceSystem.Models
         Shipped = 2,
         Delivered = 3,
         Cancelled = 4
+
+        //Pending, Paid, Shipped, Delivered, Cancelled
     }
 }
