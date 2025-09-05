@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Security.Cryptography;
+using E_CommerceSystem.Services.Email;
 
 using AutoMapper;
 using AutoMapper.QueryableExtensions; // <-- needed for ProjectTo
@@ -21,18 +22,27 @@ namespace E_CommerceSystem.Services
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
         private readonly IMapper _mapper;
-        //private readonly IEmailSender _email;
-        private readonly IUserService _userService;
         private readonly IUserRepo _userRepo;
+        private readonly IEmailSender _email;            
+        private readonly IInvoiceService _invoice;       
 
-
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IUserRepo userRepo)
+        public OrderService(
+            IOrderRepo orderRepo,
+            IProductService productService,
+            IOrderProductsService orderProductsService,
+            IMapper mapper,
+            IUserRepo userRepo,
+            IEmailSender email,           
+            IInvoiceService invoice          
+        )
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
             _userRepo = userRepo;
+            _email = email;                  // <-- add
+            _invoice = invoice;              // <-- add
         }
 
         //get all orders for login user
@@ -171,12 +181,27 @@ namespace E_CommerceSystem.Services
 
                 // Update the product's stock in the database
                 _productService.UpdateProduct(existingProduct);
+
             }
 
             // Update the total amount of the order
             order.TotalAmount = totalOrderPrice;
             UpdateOrder(order);
 
+            // Fetch user to get email
+            var user = _userRepo.GetUserById(uid);
+            var subject = $"Your order #{order.OID} has been placed";
+            var body = $@"
+            <h2>Thanks for your order, {user.UName}!</h2>
+            <p>Order ID: <b>{order.OID}</b></p>
+            <p>Total: <b>{order.TotalAmount:C}</b></p>
+            <p>Status: <b>{order.Status}</b></p>
+        ";
+
+            // Optional: generate invoice PDF and attach
+            byte[]? pdf = _invoice.Generate(order.OID);
+
+            _ = _email.SendAsync(user.Email, subject, body, pdf, $"Invoice_{order.OID}.pdf");
         }
 
         public void Cancel(int oid, int uid)
@@ -202,9 +227,14 @@ namespace E_CommerceSystem.Services
             }
             // Delete the order
             _orderRepo.DeleteOrder(oid);
-            // Optionally, send a cancellation email to the user
+            var user = _userRepo.GetUserById(uid);
+            var subject = $"Your order #{oid} has been cancelled";
+            var body = $@"
+            <h2>Order Cancelled</h2>
+            <p>Order ID: <b>{oid}</b> was cancelled successfully.</p>
+        ";
 
-            //_email.SendOrderCancelled(oid);
+            _ = _email.SendAsync(user.Email, subject, body);
 
 
 
