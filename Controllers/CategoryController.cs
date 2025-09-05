@@ -76,7 +76,7 @@ namespace E_CommerceSystem.Controllers
         }
 
 
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPut("DeleteCategory/{cid}")]
         public IActionResult DeleteCategory(int id)
         {
@@ -96,7 +96,7 @@ namespace E_CommerceSystem.Controllers
         }
 
 
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("UpdateCategory/{cid}")]
         public IActionResult UpdateCategory(int id, [FromBody] CategoryDTO categoryDTO)
         {
