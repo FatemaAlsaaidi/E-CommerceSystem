@@ -21,18 +21,17 @@ namespace E_CommerceSystem.Services
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
         private readonly IMapper _mapper;
-        private readonly IEmailSender _email;
+        //private readonly IEmailSender _email;
         private readonly IUserService _userService;
         private readonly IUserRepo _userRepo;
 
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email, IUserRepo userRepo)
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IUserRepo userRepo)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
-            _email = email;
             _userRepo = userRepo;
         }
 
@@ -205,7 +204,7 @@ namespace E_CommerceSystem.Services
             _orderRepo.DeleteOrder(oid);
             // Optionally, send a cancellation email to the user
 
-            _email.SendOrderCancelled(oid);
+            //_email.SendOrderCancelled(oid);
 
 
 
@@ -266,8 +265,8 @@ namespace E_CommerceSystem.Services
             _orderRepo.UpdateOrder(order);
 
             // 7) Notifications/emails based on status
-            if (newStatus == OrderStatus.Paid)
-                _email.SendOrderPlaced(order.OID);
+            //if (newStatus == OrderStatus.Paid)
+            //    _email.SendOrderPlaced(order.OID);
         }
 
 
