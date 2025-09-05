@@ -18,6 +18,8 @@ namespace E_CommerceSystem
         public DbSet<Category> Categories { get; set; } = default!;
         public DbSet<Supplier> Suppliers { get; set; } = default!;
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
@@ -34,7 +36,11 @@ namespace E_CommerceSystem
             modelBuilder.Entity<Order>()
                         .Property(o => o.Status)
                         .HasConversion<string>()
-                        .HasMaxLength(20); 
+                        .HasMaxLength(20);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(rt => new { rt.UID, rt.TokenHash })
+                .IsUnique();
 
         }
     }

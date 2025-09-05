@@ -5,7 +5,7 @@ namespace E_CommerceSystem.Models
 {
     public class UserDTO
     {
-       
+
         [Required]
         public string UName { get; set; }
 
@@ -25,8 +25,7 @@ namespace E_CommerceSystem.Models
         [Required]
         public string Role { get; set; }
 
-        public record UserRegisterDto(string UName, string Email, string Password, string? Phone, string role);
-
+        public record UserRegisterDto(string UName, string Email, string Password, string? Phone, string Role);
         public record UserReadDto(int UID, string UName, string Email, string Role, DateTime CreatedAt);
 
         public record UserUpdateDto(string UName, string Email, string? Phone);

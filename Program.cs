@@ -61,6 +61,10 @@ namespace E_CommerceSystem
             builder.Services.AddTransient<IInvoiceService, InvoiceService>();
 
 
+            builder.Services.AddScoped<IRefreshTokenRepo, RefreshTokenRepo>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+
 
 
             // Auto Mapper Configurations
@@ -89,8 +93,13 @@ namespace E_CommerceSystem
 
 
             //// Add JWT Authentication
+            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            //var secretKey = jwtSettings["SecretKey"];
+
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"];
+            var secretKey = jwtSettings["SecretKey"]
+                            ?? throw new InvalidOperationException("JwtSettings:SecretKey missing");
+
 
 
 
