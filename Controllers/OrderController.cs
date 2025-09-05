@@ -139,14 +139,14 @@ namespace E_CommerceSystem.Controllers
         }
 
         //// ----- ONLY ONE status endpoint with this route -----
-        //[Authorize(Roles = "Admin")] // or "admin" – match the exact role value in your JWT
-        //[HttpPost("{orderId:int}/status")]
-        //public IActionResult UpdateStatus(int orderId, [FromBody] UpdateOrderStatusRequest body)
-        //{
-        //    var uid = GetUserId();
-        //    _orderService.UpdateOrderStatus(orderId, body.NewStatus, uid);
-        //    return Ok($"Order status set to {body.NewStatus}.");
-        //}
+        [Authorize(Roles = "Admin")] // or "admin" – match the exact role value in your JWT
+        [HttpPost("{orderId:int}/status")]
+        public IActionResult UpdateStatus(int orderId, [FromBody] UpdateOrderStatusRequest body)
+        {
+            var uid = GetUserId();
+            _orderService.UpdateOrderStatus(orderId, body.NewStatus, uid);
+            return Ok($"Order status set to {body.NewStatus}.");
+        }
 
 
 

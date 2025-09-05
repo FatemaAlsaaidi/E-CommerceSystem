@@ -23,15 +23,17 @@ namespace E_CommerceSystem.Services
         private readonly IMapper _mapper;
         private readonly IEmailSender _email;
         private readonly IUserService _userService;
+        private readonly IUserRepo _userRepo;
 
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email)
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email, IUserRepo userRepo)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
             _email = email;
+            _userRepo = userRepo;
         }
 
         //get all orders for login user
@@ -209,6 +211,66 @@ namespace E_CommerceSystem.Services
 
 
         }
+
+
+        public void UpdateOrderStatus(int oid, OrderStatus newStatus, int requesterUid)
+        {
+            // 1) fetch the order
+            var order = _orderRepo.GetOrderById(oid) ??
+                        throw new KeyNotFoundException("Order not found.");
+
+            // 2) اfetch the use data
+            var requester = _userRepo.GetUserById(requesterUid); // تأكد أن لديك _userRepo
+            var role = requester?.Role ?? "";
+            bool isAdminOrManager = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                                 || role.Equals("Manager", StringComparison.OrdinalIgnoreCase);
+
+            // 3) statuse cancelled dose not able to change 
+            if (order.Status is OrderStatus.Delivered or OrderStatus.Cancelled)
+                throw new InvalidOperationException($"Order is already {order.Status}; status can no longer be changed.");
+
+            // 4) change that allow to do 
+            bool okNormal = order.Status switch
+            {
+                OrderStatus.Pending => newStatus is OrderStatus.Paid or OrderStatus.Cancelled or OrderStatus.Shipped,
+                OrderStatus.Paid => newStatus is OrderStatus.Shipped or OrderStatus.Cancelled or OrderStatus.Delivered,
+                OrderStatus.Shipped => newStatus is OrderStatus.Delivered or OrderStatus.Cancelled,
+                _ => false
+            };
+
+            // 5) For the administrator/manager: Allow status changes to proceed "forward only" (e.g., from "Processing" to "Delivered"), while preventing reverting to a previous status and preventing changing the status to "Cancelled" outside of this framework.
+            bool forwardOnlyForAdmins = false;
+            if (isAdminOrManager)
+            {
+                //Arrange the cases numerically in the same order as your enum definition:
+                static int Rank(OrderStatus s) => s switch
+                {
+                    OrderStatus.Pending => 0,
+                    OrderStatus.Paid => 1,
+                    OrderStatus.Shipped => 2,
+                    OrderStatus.Delivered => 3,
+                    OrderStatus.Cancelled => 99, 
+                    _ => 100
+                };
+
+                //It allows progression to a later status (e.g., Pending->Delivered or Paid->Delivered), but it does not allow moving to the 'Cancelled' status.
+                forwardOnlyForAdmins = newStatus is not OrderStatus.Cancelled
+                                       && Rank(newStatus) > Rank(order.Status);
+            }
+
+            if (!(okNormal || forwardOnlyForAdmins))
+                throw new InvalidOperationException($"Cannot change {order.Status} -> {newStatus}");
+
+            // 6) Apply the change and save.
+            order.Status = newStatus;
+            _orderRepo.UpdateOrder(order);
+
+            // 7) Notifications/emails based on status
+            if (newStatus == OrderStatus.Paid)
+                _email.SendOrderPlaced(order.OID);
+        }
+
+
 
 
     }

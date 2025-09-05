@@ -14,6 +14,8 @@ namespace E_CommerceSystem.Services
        void PlaceOrder(List<OrderItemDTO> items, int uid);
         void Cancel(int oid, int uid);
 
+        void UpdateOrderStatus(int oid, OrderStatus newStatus, int requesterUid);
+
 
 
 
