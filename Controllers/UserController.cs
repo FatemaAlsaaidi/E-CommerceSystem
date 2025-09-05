@@ -30,11 +30,22 @@ namespace E_CommerceSystem.Controllers
             _mapper = mapper;
         }
 
+        //[AllowAnonymous]
+        //[HttpPost("Register")]
+        //public IActionResult Register(UserRegisterDto dto)
+        //{
+        //    var user = _mapper.Map<User>(dto); // Password hashing happens in the service/repo
+        //    _userService.AddUser(user);
+        //    var read = _mapper.Map<UserReadDto>(user);
+        //    return CreatedAtAction(nameof(GetUserById), new { uid = user.UID }, read);
+        //}
+
         [AllowAnonymous]
         [HttpPost("Register")]
         public IActionResult Register(UserRegisterDto dto)
         {
-            var user = _mapper.Map<User>(dto); // Password hashing happens in the service/repo
+            var user = _mapper.Map<User>(dto); // Password is ignored in the current profile
+            user.Password = dto.Password;      // provide it explicitly for hashing
             _userService.AddUser(user);
             var read = _mapper.Map<UserReadDto>(user);
             return CreatedAtAction(nameof(GetUserById), new { uid = user.UID }, read);
