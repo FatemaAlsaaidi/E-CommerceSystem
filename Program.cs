@@ -10,6 +10,9 @@ using AutoMapper; // Add this using directive for AutoMapper
 using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
 
+using E_CommerceSystem.Services.Email;
+
+
 //using static E_CommerceSystem.Mapping.CategoryProfile;
 //using static E_CommerceSystem.Mapping.OrderProfile;
 //using static E_CommerceSystem.Mapping.ProductProfile;
@@ -51,6 +54,12 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<ISupplierService, SupplierService>();
 
             builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
+
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+            builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+
+            builder.Services.AddTransient<IInvoiceService, InvoiceService>();
+
 
 
 

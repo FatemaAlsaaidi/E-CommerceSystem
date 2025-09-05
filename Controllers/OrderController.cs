@@ -152,6 +152,13 @@ namespace E_CommerceSystem.Controllers
 
         //-------------------------
 
+        [HttpGet("{orderId:int}/invoice")]
+        public IActionResult DownloadInvoice(int orderId, [FromServices] IInvoiceService invoices)
+        {
+            var pdf = invoices.Generate(orderId);
+            return File(pdf, "application/pdf", $"Invoice_{orderId}.pdf");
+        }
+
 
 
         // Method to decode token to get user id
