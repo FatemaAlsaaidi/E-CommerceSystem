@@ -8,9 +8,21 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using AutoMapper; // Add this using directive for AutoMapper
 using System.Security.Claims;
+
+using E_CommerceSystem.Middleware;
 using Microsoft.Extensions.DependencyInjection;
 
 using E_CommerceSystem.Services.Email;
+
+//using Serilog;
+using Serilog.Events;
+using E_CommerceSystem.Middleware;
+using Serilog;
+
+
+
+
+
 
 
 //using static E_CommerceSystem.Mapping.CategoryProfile;
@@ -25,9 +37,22 @@ namespace E_CommerceSystem
 {
     public class Program
     {
+        static Program()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .Enrich.WithEnvironmentName()
+                .Enrich.WithThreadId()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/app-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+                .CreateLogger();
+        }
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Host.UseSerilog();
             builder.Services.AddControllers();
 
             // Add services to the container.
@@ -67,8 +92,14 @@ namespace E_CommerceSystem
 
 
 
+
+
             // Auto Mapper Configurations
             builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+
+            builder.Logging.AddConsole();
+            builder.Logging.AddDebug();
+
 
 
 
@@ -177,8 +208,11 @@ namespace E_CommerceSystem
     });
             });
 
+            //builder.Logging.ClearProviders();   // keep defaults by omitting this line
+            //builder.Logging.AddConsole();
+            //builder.Logging.AddDebug();
 
-
+           
             var app = builder.Build();
             app.UseHttpsRedirection(); 
 
@@ -191,14 +225,26 @@ namespace E_CommerceSystem
                 app.UseSwaggerUI();
             }
 
+
+
             app.UseHttpsRedirection();
 
             app.UseAuthentication(); //jwt check middleware
-            app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+            //app.UseSerilogRequestLogging();
+            app.UseErrorHandling();                 // <-- centralized errors
+
+
             app.UseAuthorization();
 
 
             app.MapControllers();
+
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            });
+
 
             app.Run();
         }
