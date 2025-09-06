@@ -35,7 +35,10 @@ namespace E_CommerceSystem.Models
         );
         public record ProductUpdateDto(
             string ProductName, string? Description, decimal Price, int Stock,
-            int? CategoryId, int? SupplierId
+            int? CategoryId, int? SupplierId,
+            byte[] RowVersion
         );
+
+      
     }
 }

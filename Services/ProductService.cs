@@ -72,13 +72,31 @@ namespace E_CommerceSystem.Services
 
         public void UpdateProduct(Product product)
         {
+            var existing = _productRepo.GetProductById(product.PID)
+                          ?? throw new KeyNotFoundException($"Product with ID {product.PID} not found.");
 
-            var existingProduct = _productRepo.GetProductById(product.PID);
-            if (existingProduct == null)
-                throw new KeyNotFoundException($"Product with ID {product.PID} not found.");
+            // Copy allowed fields + **RowVersion** from incoming object to tracked instance:
+            existing.ProductName = product.ProductName;
+            existing.Description = product.Description;
+            existing.Price = product.Price;
+            existing.Stock = product.Stock;
+            existing.CategoryId = product.CategoryId;
+            existing.SupplierId = product.SupplierId;
+            existing.ImageUrl = product.ImageUrl;
 
-            _productRepo.UpdateProduct(product);
+            // Apply the incoming RowVersion so EF can compare
+            existing.RowVersion = product.RowVersion;
+
+            try
+            {
+                _productRepo.UpdateProduct(existing);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException("The product was modified by someone else. Please reload and try again.");
+            }
         }
+
 
         public Product GetProductByName(string productName)
         {

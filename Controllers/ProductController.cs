@@ -47,26 +47,28 @@ namespace E_CommerceSystem.Controllers
             return CreatedAtAction(nameof(GetProductByID), new { id = product.PID }, readDto);
         }
 
-        [Authorize]
         [HttpPut("UpdateProduct/{productId:int}")]
-        [Consumes("application/json")]
-        public IActionResult UpdateProduct(int productId, [FromBody] ProductUpdateDto productInput)
+        public IActionResult UpdateProduct(int productId, [FromBody] ProductUpdateDto input)
         {
-            // ModelState يُتحقق تلقائيًا مع [ApiController]، لكن نضيف حماية:
-            if (productInput is null) return BadRequest("Product data is required.");
+            if (input is null) return BadRequest("Product data is required.");
 
-            var product = _productService.GetProductById(productId);
+            var product = _productService.GetProductById(productId); // loads current
             if (product is null) return NotFound($"Product {productId} not found.");
 
-            _mapper.Map(productInput, product);
+            _mapper.Map(input, product); // includes RowVersion
 
-
-            _productService.UpdateProduct(product);
-
-           
-            var readDto = _mapper.Map<ProductReadDto>(product);
-            return Ok(readDto);
+            try
+            {
+                _productService.UpdateProduct(product);
+                var readDto = _mapper.Map<ProductReadDto>(product);
+                return Ok(readDto);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.StartsWith("The product was modified"))
+            {
+                return Conflict(new { message = ex.Message }); // HTTP 409
+            }
         }
+
 
         [AllowAnonymous]
         [HttpGet("GetAllProducts")]

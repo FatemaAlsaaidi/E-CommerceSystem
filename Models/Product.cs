@@ -27,6 +27,9 @@ namespace E_CommerceSystem.Models
 
         public decimal OverallRating { get; set; }
 
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<OrderProducts> OrderProducts { get;set; }
 

@@ -17,6 +17,9 @@ namespace E_CommerceSystem.Models
         public DateTime? CancelledAt { get; set; }
         public string? CancelReason { get; set; }
 
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
+
         [ForeignKey("user")]
         public int UID { get; set; }
         public virtual User user { get; set; }
