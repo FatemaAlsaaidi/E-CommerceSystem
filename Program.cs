@@ -1,42 +1,25 @@
+using System;
+using System.Text;
 
 using E_CommerceSystem.Repositories;
 using E_CommerceSystem.Services;
+using E_CommerceSystem.Services.Email;
+using E_CommerceSystem.Middleware;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using AutoMapper; // Add this using directive for AutoMapper
-using System.Security.Claims;
 
-using E_CommerceSystem.Middleware;
-using Microsoft.Extensions.DependencyInjection;
-
-using E_CommerceSystem.Services.Email;
-
-//using Serilog;
-using Serilog.Events;
-using E_CommerceSystem.Middleware;
+using AutoMapper;
 using Serilog;
-
-
-
-
-
-
-
-//using static E_CommerceSystem.Mapping.CategoryProfile;
-//using static E_CommerceSystem.Mapping.OrderProfile;
-//using static E_CommerceSystem.Mapping.ProductProfile;
-//using static E_CommerceSystem.Mapping.ReviewProfile;
-//using static E_CommerceSystem.Mapping.SupplierProfile;
-//using static E_CommerceSystem.Mapping.UserProfile;
-
+using Microsoft.Extensions.DependencyInjection;
 
 namespace E_CommerceSystem
 {
     public class Program
     {
+        // --- Serilog bootstrap happens before builder creation ---
         static Program()
         {
             Log.Logger = new LoggerConfiguration()
@@ -49,16 +32,21 @@ namespace E_CommerceSystem
                 .WriteTo.File("Logs/app-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
                 .CreateLogger();
         }
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Replace default logging pipeline with Serilog
             builder.Host.UseSerilog();
+
             builder.Services.AddControllers();
 
-            // Add services to the container.
-            builder.Services.AddScoped<IUserRepo,UserRepo>();
-            builder.Services.AddScoped<IUserService,UserService>();
-
+            // ----------------------
+            // Repositories & Services
+            // ----------------------
+            builder.Services.AddScoped<IUserRepo, UserRepo>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddScoped<IProductRepo, ProductRepo>();
             builder.Services.AddScoped<IProductService, ProductService>();
@@ -82,105 +70,71 @@ namespace E_CommerceSystem
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
-
             builder.Services.AddTransient<IInvoiceService, InvoiceService>();
-
 
             builder.Services.AddScoped<IRefreshTokenRepo, RefreshTokenRepo>();
             builder.Services.AddScoped<IAuthService, AuthService>();
 
-
-
-
-
-
-            // Auto Mapper Configurations
+            // AutoMapper (scan all profiles in current app domain)
             builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
 
-            builder.Logging.AddConsole();
-            builder.Logging.AddDebug();
-
-
-
-
-
-
-
-
-
-
-
-
-            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            //     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+            // ----------------------
+            // DbContext
+            // ----------------------
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                  options.UseLazyLoadingProxies() //to enable lazy loading ...
-                  .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseLazyLoadingProxies()
+                       .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add JWT Authentication
-            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            //var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JwtSettings:SecretKey is missing.");
+            // ----------------------
+            // JWT Authentication
+            // ----------------------
+            var jwt = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = jwt["SecretKey"] ?? throw new InvalidOperationException("JwtSettings:SecretKey missing");
 
-
-            //// Add JWT Authentication
-            //var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            //var secretKey = jwtSettings["SecretKey"];
-
-            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"]
-                            ?? throw new InvalidOperationException("JwtSettings:SecretKey missing");
-
-
-
-
-            builder.Services.AddAuthentication(options =>
+            builder.Services.AddAuthentication(o =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                     .AddJwtBearer(options =>
-                     {
-                         options.TokenValidationParameters = new TokenValidationParameters
-                         {
-                             ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
-                             ValidateAudience = false, // You can set this to true if you want to validate the audience.
-                             ValidateLifetime = true, // Ensures the token hasn't expired.
-                             ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
-                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
-                         };
-                         // Read token from cookie if Authorization header is missing
-                         options.Events = new JwtBearerEvents
-                         {
-                             OnMessageReceived = context =>
-                             {
-                                 if (string.IsNullOrEmpty(context.Token))
-                                 {
-                                     var cookieToken = context.Request.Cookies["access_token"];
-                                     if (!string.IsNullOrEmpty(cookieToken))
-                                     {
-                                         context.Token = cookieToken;
-                                     }
-                                 }
-                                 return Task.CompletedTask;
-                             }
-                         };
-                     });
+            .AddJwtBearer(opt =>
+            {
+                opt.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                };
+
+                // Allow JWT from cookie if Authorization header is absent
+                opt.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
+                    {
+                        if (string.IsNullOrEmpty(ctx.Token))
+                        {
+                            var cookie = ctx.Request.Cookies["access_token"];
+                            if (!string.IsNullOrEmpty(cookie))
+                                ctx.Token = cookie;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+            });
+
             builder.Services.AddAuthorization(o =>
             {
                 o.AddPolicy("Reports.Read", p => p.RequireRole("Admin", "Manager"));
-
-                // o.AddPolicy("Reports.Read", p => p.RequireClaim("permission", "reports.read"));
             });
 
+            // ----------------------
+            // Swagger
+            // ----------------------
             builder.Services.AddEndpointsApiExplorer();
-
-
-
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "E-Commerce API", Version = "v1" });
-                // Use HTTP Bearer so Swagger auto-prefixes "Bearer "
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Description = "Paste ONLY your JWT below. Swagger will add 'Bearer ' automatically.",
@@ -190,61 +144,46 @@ namespace E_CommerceSystem
                     Scheme = "bearer",
                     BearerFormat = "JWT"
                 });
-
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            //new string[] {}
-            Array.Empty<string>()
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
-            //builder.Logging.ClearProviders();   // keep defaults by omitting this line
-            //builder.Logging.AddConsole();
-            //builder.Logging.AddDebug();
-
-           
             var app = builder.Build();
-            app.UseHttpsRedirection(); 
 
+            // ----------------------
+            // Pipeline
+            // ----------------------
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            // Configure the HTTP request pipeline.
+            // Serilog request logging (place EARLY)
+            app.UseSerilogRequestLogging(opts =>
+            {
+                opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            });
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            app.UseAuthentication();
 
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthentication(); //jwt check middleware
-
-            //app.UseSerilogRequestLogging();
-            app.UseErrorHandling();                 // <-- centralized errors
-
+            // Centralized error handling (your middleware)
+            app.UseErrorHandling();
 
             app.UseAuthorization();
 
-
             app.MapControllers();
-
-            app.UseSerilogRequestLogging(options =>
-            {
-                options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-            });
-
 
             app.Run();
         }
