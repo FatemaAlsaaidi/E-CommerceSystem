@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using AutoMapper;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
+using E_CommerceSystem.AdminDashboard;
 
 namespace E_CommerceSystem
 {
@@ -64,6 +65,9 @@ namespace E_CommerceSystem
                 builder.Services.AddScoped<ISupplierService, SupplierService>();
 
                 builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
+
+                builder.Services.AddScoped<IAdminDashboardService,AdminDashboardService>();
+
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
                 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
