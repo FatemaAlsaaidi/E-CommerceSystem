@@ -85,10 +85,32 @@ namespace E_CommerceSystem.Controllers
         [HttpGet("GetProductByID")]
         public IActionResult GetProductByID(int id)
         {
-            var product = _productService.GetProductById(id);
-            var dto = _mapper.Map<ProductReadDto>(product);   
+            var p = _productService.GetProductById(id);
+            var dto = _mapper.Map<ProductReadDto>(p);
             return Ok(dto);
         }
+        //[AllowAnonymous]
+        //[HttpGet("GetProductByID")]
+        //public IActionResult GetProductByID(int id)
+        //{
+        //    try
+        //    {
+        //        var p = _productService.GetProductById(id);
+        //        var dto = _mapper.Map<ProductReadDto>(p);
+        //        return Ok(dto);
+        //    }
+        //    catch (KeyNotFoundException ex)
+        //    {
+        //        return NotFound(new ProblemDetails
+        //        {
+        //            Title = "Not Found",
+        //            Status = 404,
+        //            Detail = ex.Message,
+        //            Instance = HttpContext.Request.Path + HttpContext.Request.QueryString
+        //        });
+        //    }
+        //}
+
 
         [Authorize(Roles = "Admin")]
         [HttpPost("{productId:int}/image")]

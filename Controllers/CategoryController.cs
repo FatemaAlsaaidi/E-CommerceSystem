@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Mvc;
+
+using System;
 
 namespace E_CommerceSystem.Controllers
 {
@@ -15,6 +18,8 @@ namespace E_CommerceSystem.Controllers
     {
         private readonly ICategoryService _svc;
         public CategoryController(ICategoryService svc) => _svc = svc;
+
+        [AllowAnonymous]
 
         [HttpGet("GetAllCategories")]
         public IActionResult GetAllCategories()
@@ -31,6 +36,8 @@ namespace E_CommerceSystem.Controllers
 
         }
 
+        [AllowAnonymous]
+
         [HttpGet("GetCategoryById/{cid}")]
         public IActionResult GetCategory(int id)
         {
@@ -41,6 +48,8 @@ namespace E_CommerceSystem.Controllers
             }
             catch (KeyNotFoundException knfEx)
             {
+                // with use middle ware 
+                
                 return NotFound(knfEx.Message);
             }
             catch (Exception ex)

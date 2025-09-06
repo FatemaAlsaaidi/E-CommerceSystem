@@ -59,10 +59,12 @@ namespace E_CommerceSystem.Services
         }
         public Product GetProductById(int pid)
         {
-            var product = _productRepo.GetProductById(pid);
+            
+                var product = _productRepo.GetProductById(pid);
             if (product == null)
                 throw new KeyNotFoundException($"Product with ID {pid} not found.");
             return product;
+            
         }
 
         public void AddProduct(Product product)
