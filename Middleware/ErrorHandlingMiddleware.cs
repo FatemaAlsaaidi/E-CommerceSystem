@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;   // DbUpdateConcurrencyException
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore; // DbUpdateConcurrencyException
 
 namespace E_CommerceSystem.Middleware
 {
+    // ????? "conventional middleware": ???? RequestDelegate ?? ??? ctor
     public sealed class ErrorHandlingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -13,11 +12,11 @@ namespace E_CommerceSystem.Middleware
 
         public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
         {
-            _next = next;
-            _logger = logger;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task Invoke(HttpContext context)
         {
             try
             {
@@ -25,7 +24,7 @@ namespace E_CommerceSystem.Middleware
             }
             catch (Exception ex)
             {
-                // map exception -> status/title
+                // ????? ????????? -> ??? ?????? + ?????
                 var (status, title) = ex switch
                 {
                     KeyNotFoundException => (StatusCodes.Status404NotFound, "Not Found"),
@@ -41,11 +40,14 @@ namespace E_CommerceSystem.Middleware
                 };
 
                 var traceId = context.TraceIdentifier;
+
+                // ??? ?????
                 _logger.LogError(ex,
                     "{Title} ({Status}) on {Method} {Path} | TraceId={TraceId}",
                     title, status, context.Request.Method,
                     context.Request.Path + context.Request.QueryString, traceId);
 
+                // RFC-7807 ProblemDetails
                 var problem = new ProblemDetails
                 {
                     Status = status,
@@ -57,12 +59,14 @@ namespace E_CommerceSystem.Middleware
 
                 context.Response.ContentType = "application/problem+json";
                 context.Response.StatusCode = status;
+
+                // ???? JsonSerializer — ???? ASP.NET ???? JSON
                 await context.Response.WriteAsJsonAsync(problem);
             }
         }
     }
 
-    public static class ErrorHandlingMiddlewareExtensions
+    public static class ErrorHandlingExtensions
     {
         public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder app)
             => app.UseMiddleware<ErrorHandlingMiddleware>();
