@@ -148,7 +148,7 @@ namespace E_CommerceSystem.Controllers
         }
 
         //-------------
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost("Refresh")]
         public IActionResult Refresh()
         {

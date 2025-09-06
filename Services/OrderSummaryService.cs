@@ -8,9 +8,10 @@ namespace E_CommerceSystem.Services
         private readonly IOrderProductsRepo _orderItems;
         private readonly IProductRepo _products;
         private readonly IUserRepo _users;
+        private readonly IReviewRepo _reviews;
 
-        public OrderSummaryService(IOrderRepo o, IOrderProductsRepo oi, IProductRepo p, IUserRepo u)
-            => (_orders, _orderItems, _products, _users) = (o, oi, p, u);
+        public OrderSummaryService(IOrderRepo o, IOrderProductsRepo oi, IProductRepo p, IUserRepo u, IReviewRepo r)
+            => (_orders, _orderItems, _products, _users, _reviews) = (o, oi, p, u,r);
 
         public OrderSummaryDto GetSummary(DateTime fromUtc, DateTime toUtc)
         {
@@ -65,5 +66,7 @@ namespace E_CommerceSystem.Services
             return new OrderSummaryDto(orders.Count, pending, paid, shipped, delivered, cancelled,
                                        totalRevenue, topProducts, byUser, byDay);
         }
+
+
     }
 }

@@ -5,5 +5,7 @@ namespace E_CommerceSystem.Services
     public interface IOrderSummaryService
     {
         OrderSummaryDto GetSummary(DateTime fromUtc, DateTime toUtc);
+
+       
     }
 }
