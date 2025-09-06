@@ -21,6 +21,8 @@ namespace E_CommerceSystem.Controllers
     [Route("api/[Controller]")]
     public class ProductController : ControllerBase
     {
+        public record PagedResult<T>(IEnumerable<T> Items, int PageNumber, int PageSize, int? TotalCount = null);
+
         private readonly IProductService _productService;
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
@@ -70,16 +72,37 @@ namespace E_CommerceSystem.Controllers
         }
 
 
+        //[AllowAnonymous]
+        //[HttpGet("GetAllProducts")]
+        //public IActionResult GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5,
+        //                            [FromQuery] string? name = null,
+        //                            [FromQuery] decimal? minPrice = null,
+        //                            [FromQuery] decimal? maxPrice = null)
+        //{
+        //    var products = _productService.GetAllProducts(pageNumber, pageSize, name, minPrice, maxPrice);
+        //    return Ok(_mapper.Map<List<ProductReadDto>>(products));
+        //}
+
         [AllowAnonymous]
+
         [HttpGet("GetAllProducts")]
-        public IActionResult GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5,
-                                    [FromQuery] string? name = null,
-                                    [FromQuery] decimal? minPrice = null,
-                                    [FromQuery] decimal? maxPrice = null)
+        [ProducesResponseType(typeof(PagedResult<Product>), StatusCodes.Status200OK)]
+        public IActionResult GetAll([FromQuery] ProductQuery q)
         {
-            var products = _productService.GetAllProducts(pageNumber, pageSize, name, minPrice, maxPrice);
-            return Ok(_mapper.Map<List<ProductReadDto>>(products));
+            if (q.MinPrice.HasValue && q.MaxPrice.HasValue && q.MinPrice > q.MaxPrice)
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Invalid price range",
+                    Detail = "MinPrice cannot be greater than MaxPrice."
+                });
+
+            var items = _productService.GetAllProducts(q.PageNumber, q.PageSize, q.Name, q.MinPrice, q.MaxPrice); // :contentReference[oaicite:4]{index=4}:contentReference[oaicite:5]{index=5}
+
+            var result = new PagedResult<Product>(items, q.PageNumber, q.PageSize);
+            return Ok(result);
         }
+    
 
         [AllowAnonymous]
         [HttpGet("GetProductByID")]
@@ -155,4 +178,6 @@ namespace E_CommerceSystem.Controllers
             throw new UnauthorizedAccessException("Invalid or unreadable token.");
         }
     }
+
+
 }

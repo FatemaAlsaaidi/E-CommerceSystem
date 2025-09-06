@@ -41,4 +41,14 @@ namespace E_CommerceSystem.Models
 
       
     }
+    public class ProductQuery
+    {
+        public string? Name { get; set; }
+        [Range(1, int.MaxValue)] public int PageNumber { get; set; } = 1;
+        [Range(1, 200)] public int PageSize { get; set; } = 10;
+        [Range(0, double.MaxValue)] public decimal? MinPrice { get; set; }
+        [Range(0, double.MaxValue)] public decimal? MaxPrice { get; set; }
+
+
+    }
 }
