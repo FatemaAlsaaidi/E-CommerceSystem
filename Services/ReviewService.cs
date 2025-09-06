@@ -59,39 +59,31 @@ namespace E_CommerceSystem.Services
         }
         public void AddReview(int uid, int pid, ReviewDTO reviewDTO)
         {
-            // Get all orders for the user
-            var orders = _orderService.GetOrderByUserId(uid);
-            foreach (var order in orders)
+            // 1) Must have purchased the product
+            var userOrders = _orderService.GetOrderByUserId(uid);  // already available in your service:contentReference[oaicite:2]{index=2}
+            var purchased = userOrders
+                .SelectMany(o => _orderProductsService.GetOrdersByOrderId(o.OID))
+                .Any(op => op.PID == pid);
+            if (!purchased)
+                throw new UnauthorizedAccessException("You can only review products you purchased.");
+
+            // 2) Must not already have a review
+            var existing = _reviewRepo.GetReviewsByProductIdAndUserId(pid, uid);
+            if (existing != null)
+                throw new InvalidOperationException("You have already reviewed this product.");
+
+            // 3) Create & save review
+            var review = _mapper.Map<Review>(reviewDTO, opt =>
             {
-                // Check if the product exists in any of the user's orders
-                var products = _orderProductsService.GetOrdersByOrderId(order.OID);
-                foreach (var product in products)
-                {
-                    if (product != null && product.PID == pid)
-                    {
-                        // Check if the user has already added a review for this product
-                        var existingReview = GetReviewsByProductIdAndUserId(pid,uid);
-                        
-                        if (existingReview != null)
-                            throw new InvalidOperationException($"You have already reviewed this product.");
+                opt.Items["pid"] = pid;
+                opt.Items["uid"] = uid;
+            });
+            _reviewRepo.AddReview(review);
 
-                        // AutoMapper
-                        var review = _mapper.Map<Review>(reviewDTO, opt =>
-                        {
-                            opt.Items["pid"] = pid;
-                            opt.Items["uid"] = uid;
-                        });
-                        _reviewRepo.AddReview(review);
-
-                        // Recalculate and update the product's overall rating
-                        RecalculateProductRating(pid);
-                    }
-                    //else
-                    //    throw new KeyNotFoundException($"You have not ordered this product");
-
-                }
-            }
+            // 4) Recalculate rating for THIS product only
+            RecalculateProductRating(pid);
         }
+
         public void UpdateReview(int rid, ReviewDTO reviewDTO)
         {
             var review = GetReviewById(rid);
@@ -115,19 +107,13 @@ namespace E_CommerceSystem.Services
 
         private void RecalculateProductRating(int pid)
         {
-            // get all reviews for the product
-            var reviews = _reviewRepo.GetAllReviews();
-            
-            var product = _productService.GetProductById(pid);
+            var reviews = _reviewRepo.GetReviewByProductId(pid);  // filter by product exists in repo:contentReference[oaicite:4]{index=4}
+            var product = _productService.GetProductById(pid);     // product model contains OverallRating:contentReference[oaicite:5]{index=5}
 
-            // Calculate the average rating
-            var averageRating = reviews.Average(r => r.Rating);
-
-            // Update the product's overall rating (convert double to decimal)
-            product.OverallRating = Convert.ToDecimal(averageRating);
-
-            // Save the updated product
+            var average = reviews.Any() ? reviews.Average(r => r.Rating) : 0;
+            product.OverallRating = Convert.ToDecimal(average);
             _productService.UpdateProduct(product);
         }
+
     }
 }

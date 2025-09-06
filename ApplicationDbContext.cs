@@ -42,6 +42,11 @@ namespace E_CommerceSystem
                 .HasIndex(rt => new { rt.UID, rt.TokenHash })
                 .IsUnique();
 
+            modelBuilder.Entity<Review>()
+                .HasIndex(r => new { r.PID, r.UID })
+                .IsUnique();   // one review per user per product
+
+            
         }
     }
 }
