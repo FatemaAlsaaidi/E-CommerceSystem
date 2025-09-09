@@ -3,6 +3,7 @@ using E_CommerceSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR.Protocol;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 
 using System.Security.Claims;
@@ -29,7 +30,7 @@ namespace E_CommerceSystem.Controllers
 
 
         [HttpPost("PlaceOrder")]
-        public IActionResult PlaceOrder([FromBody] List<OrderItemDTO> items)
+        public async Task<IActionResult> PlaceOrder([FromBody] List<OrderItemDTO> items)
         {
             try
             {
@@ -47,9 +48,22 @@ namespace E_CommerceSystem.Controllers
                 // Extract user ID 
                 int uid = int.Parse(userId);
 
-                _orderService.PlaceOrder(items, uid);
+                //await _orderService.PlaceOrder(items, uid);
 
-                return Ok("Order placed successfully.");
+                //return Ok("Order placed successfully.");
+
+                var orderId = await _orderService.PlaceOrder(items, uid);
+                var invoiceUrl = Url.ActionLink(
+                action: nameof(DownloadInvoice),
+                controller: "Order",
+                values: new { orderId },
+                protocol: Request.Scheme);
+                                return Ok(new
+                                {
+                    message = "Order placed successfully.",
+                    orderId,
+                    invoiceUrl
+               });
             }
             catch (Exception ex)
             {
@@ -131,10 +145,10 @@ namespace E_CommerceSystem.Controllers
         // ----- ONLY ONE cancel endpoint with this route -----
         [Authorize] // owner can cancel; service re-checks ownership
         [HttpPost("{orderId:int}/cancel")]
-        public IActionResult Cancel(int orderId, [FromBody] CancelOrderRequest? body)
+        public async Task<IActionResult> Cancel(int orderId)
         {
             var uid = GetUserId();
-            _orderService.Cancel(orderId, uid);
+            await _orderService.Cancel(orderId, uid);
             return Ok("Order cancelled.");
         }
 

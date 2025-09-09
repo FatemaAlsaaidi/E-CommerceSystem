@@ -24,7 +24,9 @@ namespace E_CommerceSystem.Services
         private readonly IMapper _mapper;
         private readonly IUserRepo _userRepo;
         private readonly IEmailSender _email;            
-        private readonly IInvoiceService _invoice;       
+        private readonly IInvoiceService _invoice;  
+        private readonly ILogger<OrderService> _log;
+
 
         public OrderService(
             IOrderRepo orderRepo,
@@ -33,16 +35,18 @@ namespace E_CommerceSystem.Services
             IMapper mapper,
             IUserRepo userRepo,
             IEmailSender email,           
-            IInvoiceService invoice          
-        )
+            IInvoiceService invoice
+,
+            ILogger<OrderService> log)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
             _userRepo = userRepo;
-            _email = email;                  // <-- add
-            _invoice = invoice;              // <-- add
+            _email = email;                 
+            _invoice = invoice;              
+            _log = log;
         }
 
         //get all orders for login user
@@ -135,7 +139,7 @@ namespace E_CommerceSystem.Services
         }
 
         //Places an order for the given list of items and user ID.
-        public void PlaceOrder(List<OrderItemDTO> items, int uid)
+       public async Task<int> PlaceOrder(List<OrderItemDTO> items, int uid)
         {
             // Temporary variable to hold the currently processed product
             Product existingProduct = null;
@@ -188,23 +192,30 @@ namespace E_CommerceSystem.Services
             order.TotalAmount = totalOrderPrice;
             UpdateOrder(order);
 
-            // Fetch user to get email
             var user = _userRepo.GetUserById(uid);
+
             var subject = $"Your order #{order.OID} has been placed";
-            var body = $@"
-            <h2>Thanks for your order, {user.UName}!</h2>
-            <p>Order ID: <b>{order.OID}</b></p>
-            <p>Total: <b>{order.TotalAmount:C}</b></p>
-            <p>Status: <b>{order.Status}</b></p>
-        ";
+            var body = $@"<h2>Thanks for your order, {user.UName}!</h2>
+<p>Order ID: <b>{order.OID}</b></p>
+<p>Total: <b>{order.TotalAmount:C}</b></p>
+<p>Status: <b>{order.Status}</b></p>";
 
-            // Optional: generate invoice PDF and attach
-            byte[]? pdf = _invoice.Generate(order.OID);
+            try
+            {
+                var pdf = _invoice.Generate(order.OID);
 
-            _ = _email.SendAsync(user.Email, subject, body, pdf, $"Invoice_{order.OID}.pdf");
+                await _email.SendAsync(user.Email, subject, body, pdf, $"Invoice_{order.OID}.pdf");
+            }
+                        catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to send order placement email for OrderId={OrderId}", order.OID);
+                               // don't throw: order is already created and updated
+               }
+            return order.OID;
+
         }
 
-        public void Cancel(int oid, int uid)
+        public async Task Cancel(int oid, int uid)
         {
             var order = _orderRepo.GetOrderById(oid);
             if (order == null)
@@ -229,17 +240,22 @@ namespace E_CommerceSystem.Services
             _orderRepo.DeleteOrder(oid);
             var user = _userRepo.GetUserById(uid);
             var subject = $"Your order #{oid} has been cancelled";
-            var body = $@"
-            <h2>Order Cancelled</h2>
-            <p>Order ID: <b>{oid}</b> was cancelled successfully.</p>
-        ";
+            var body = @"<h2>Order Cancelled</h2>
+<p>Order ID: <b>" + oid + "</b> was cancelled successfully.</p>";
 
-            _ = _email.SendAsync(user.Email, subject, body);
-
-
+            try
+            {
+                await _email.SendAsync(user.Email, subject, body); 
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to send cancellation email for OrderId={OrderId}", oid);
+            }
 
 
         }
+
+
 
 
         public void UpdateOrderStatus(int oid, OrderStatus newStatus, int requesterUid)

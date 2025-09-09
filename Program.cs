@@ -15,6 +15,8 @@ using AutoMapper;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using E_CommerceSystem.AdminDashboard;
+using QuestPDF.Infrastructure; // for QuestPDF.Settings.License
+
 
 namespace E_CommerceSystem
 {
@@ -22,6 +24,8 @@ namespace E_CommerceSystem
     {
         public static void Main(string[] args)
         {
+            // QuestPDF license (for non-commercial use only, see https://www.questpdf.com/license.html)
+            QuestPDF.Settings.License = LicenseType.Community;
             // 1)Configure Serilog (inside the Main method to avoid "global code" and CS7022 warning)
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
@@ -150,6 +154,8 @@ namespace E_CommerceSystem
                         }
                     });
                 });
+
+              
 
                 var app = builder.Build();
 
