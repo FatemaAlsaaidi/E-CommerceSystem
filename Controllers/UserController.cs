@@ -16,7 +16,6 @@ using E_CommerceSystem.Repositories;
 
 namespace E_CommerceSystem.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[Controller]")]
     public class UserController: ControllerBase
@@ -27,23 +26,15 @@ namespace E_CommerceSystem.Controllers
         private readonly IAuthService _auth;
         private readonly IRefreshTokenRepo _refreshTokenRepo;
 
-        public UserController(IUserService userService, IConfiguration configuration, IMapper mapper, IRefreshTokenRepo refreshTokenRepo)
+        public UserController(IUserService userService, IConfiguration configuration, IMapper mapper, IRefreshTokenRepo refreshTokenRepo, IAuthService  authService)
         {
             _userService = userService;
             _configuration = configuration;
             _mapper = mapper;
             _refreshTokenRepo = refreshTokenRepo;
+            _auth = authService;
         }
 
-        //[AllowAnonymous]
-        //[HttpPost("Register")]
-        //public IActionResult Register(UserRegisterDto dto)
-        //{
-        //    var user = _mapper.Map<User>(dto); // Password hashing happens in the service/repo
-        //    _userService.AddUser(user);
-        //    var read = _mapper.Map<UserReadDto>(user);
-        //    return CreatedAtAction(nameof(GetUserById), new { uid = user.UID }, read);
-        //}
 
         [AllowAnonymous]
         [HttpPost("Register")]
@@ -68,64 +59,32 @@ namespace E_CommerceSystem.Controllers
         //    {
         //        var user = _userService.GetUSer(email, password);
         //        string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role);
-        //        return Ok(token);
-
+        //               return Ok(token);
+        //               // issue access token (short) + refresh token (long)
+        //        var access = _auth.CreateAccessToken(user);
+        //        var(refreshRaw, refreshHash, refreshExp) = _auth.CreateRefreshToken();
+        //        _refreshTokenRepo.Add(new RefreshToken
+        //        {
+        //            UID = user.UID,
+        //            TokenHash = refreshHash,
+        //            ExpiresAtUtc = refreshExp,
+        //            CreatedAtUtc = DateTime.UtcNow
+        //             });
+        //        _refreshTokenRepo.Save();
+                
+        //        Response.Cookies.Append("access_token", access, AuthCookieOptions(DateTime.UtcNow.AddMinutes(
+        //        double.Parse(_configuration.GetSection("JwtSettings")["ExpiryInMinutes"]!)
+        //               )));
+        //        Response.Cookies.Append("refresh_token", refreshRaw, AuthCookieOptions(refreshExp));
+                
+        //              // return a small payload (or nothing)
+        //               return Ok(new { message = "Logged in", user = new { user.UID, user.UName, user.Email, user.Role } });
         //    }
         //    catch (Exception ex)
         //    {
-        //        // Return a generic error response
         //        return StatusCode(500, $"An error occurred while login. {(ex.Message)}");
         //    }
-
         //}
-
-        //---------------------------------
-        private static CookieOptions AuthCookieOptions(DateTime? expiresUtc = null)
-        {
-            return new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,              
-                SameSite = SameSiteMode.None,
-                Expires = expiresUtc         
-            };
-        }
-
-
-        [AllowAnonymous]
-        [HttpGet("Login")]
-        public IActionResult Login(string email, string password)
-        {
-            try
-            {
-                var user = _userService.GetUSer(email, password);
-                string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role);
-                       return Ok(token);
-                       // issue access token (short) + refresh token (long)
-                var access = _auth.CreateAccessToken(user);
-                var(refreshRaw, refreshHash, refreshExp) = _auth.CreateRefreshToken();
-                _refreshTokenRepo.Add(new RefreshToken
-                {
-                    UID = user.UID,
-                    TokenHash = refreshHash,
-                    ExpiresAtUtc = refreshExp,
-                    CreatedAtUtc = DateTime.UtcNow
-                     });
-                _refreshTokenRepo.Save();
-                
-                Response.Cookies.Append("access_token", access, AuthCookieOptions(DateTime.UtcNow.AddMinutes(
-                double.Parse(_configuration.GetSection("JwtSettings")["ExpiryInMinutes"]!)
-                       )));
-                Response.Cookies.Append("refresh_token", refreshRaw, AuthCookieOptions(refreshExp));
-                
-                      // return a small payload (or nothing)
-                       return Ok(new { message = "Logged in", user = new { user.UID, user.UName, user.Email, user.Role } });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while login. {(ex.Message)}");
-            }
-        }
 
 
         [AllowAnonymous]
@@ -147,38 +106,112 @@ namespace E_CommerceSystem.Controllers
             return Ok(dto);
         }
 
-        //-------------
+        // ======================= Helpers =======================
+        private static CookieOptions AuthCookieOptions(DateTime? expiresUtc = null)
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,           // لا تُقرأ من JS
+                Secure = true,             // يتطلب HTTPS
+                SameSite = SameSiteMode.None, // للسماح من Origins مختلفة (Frontend خارجي)
+                Expires = expiresUtc
+            };
+        }
+
+        // ======================= LOGIN =========================
+    
+        [AllowAnonymous]
+        [HttpPost("Login")]
+        public IActionResult Login([FromBody] UserLoginDto dto)
+        {
+            try
+            {
+                var user = _userService.GetUSer(dto.Email, dto.Password);
+
+                // 1) create Access + Refresh
+                var access = _auth.CreateAccessToken(user);
+                var (refreshRaw, refreshHash, refreshExp) = _auth.CreateRefreshToken();
+
+                _refreshTokenRepo.Add(new RefreshToken
+                {
+                    UID = user.UID,
+                    TokenHash = refreshHash,
+                    ExpiresAtUtc = refreshExp,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+                _refreshTokenRepo.Save();
+
+                // 2) Saved in cookies
+                var accessExp = DateTime.UtcNow.AddMinutes(
+                    double.Parse(_configuration.GetSection("JwtSettings")["ExpiryInMinutes"]!)
+                );
+                Response.Cookies.Append("access_token", access, AuthCookieOptions(accessExp));
+                Response.Cookies.Append("refresh_token", refreshRaw, AuthCookieOptions(refreshExp));
+
+                // 3) Also return the token in the body (for use with Swagger/Postman)
+                return Ok(new
+                {
+                    message = "Logged in",
+                    access_token = "Token is " + access,
+                    //refresh_token = refreshRaw,
+                    expires_at = accessExp,
+                    user = new { user.UID, user.UName, user.Email, user.Role }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while login. {ex.Message}");
+            }
+        }
+
+
+        public sealed class UserLoginDto
+        {
+            public string Email { get; set; } = default!;
+            public string Password { get; set; } = default!;
+        }
+
+        // ======================= REFRESH =======================
+       
         [Authorize]
-        [HttpPost("Refresh")]
-        public IActionResult Refresh()
+        [HttpPost("Refresh Token")]
+        public IActionResult RefreshToken()
         {
             var refreshRaw = Request.Cookies["refresh_token"];
+            if (string.IsNullOrWhiteSpace(refreshRaw))
+                return Unauthorized("Missing refresh token.");
 
-            if (string.IsNullOrWhiteSpace(refreshRaw)) return Unauthorized("Missing refresh token.");
-
-
-
-            // Get user id from an access token if present; otherwise extract from old token record
-            // Simple path: read UID from the old token row
             var oldHash = _auth.Sha256(refreshRaw);
             var old = _refreshTokenRepo.GetByHash(oldHash);
-            if (old is null || !old.IsActive) return Unauthorized("Invalid refresh token.");
+            if (old is null || !old.IsActive)
+                return Unauthorized("Invalid refresh token.");
 
             _auth.RotateRefreshToken(old.UID, refreshRaw, out var newRaw, out var newExp);
 
             var user = _userService.GetUserById(old.UID);
             var newAccess = _auth.CreateAccessToken(user);
 
-            Response.Cookies.Append("access_token", newAccess, AuthCookieOptions(DateTime.UtcNow.AddMinutes(
+            var accessExp = DateTime.UtcNow.AddMinutes(
                 double.Parse(_configuration.GetSection("JwtSettings")["ExpiryInMinutes"]!)
-            )));
+            );
+
+            Response.Cookies.Append("access_token", newAccess, AuthCookieOptions(accessExp));
             Response.Cookies.Append("refresh_token", newRaw, AuthCookieOptions(newExp));
 
-            return Ok(new { message = "Refreshed" });
+        
+            return Ok(new
+            {
+                message = "Refreshed",
+                access_token = "New Token Is " + newAccess,
+                //refresh_token = newRaw,
+                //expires_at = accessExp,
+                //user = new { user.UID, user.UName, user.Email, user.Role }
+            });
         }
 
-        //--------------------------------------
 
+        // ======================= LOGOUT ========================
+        // This disables the refresh function and deletes cookies from the browser.
         [Authorize]
         [HttpPost("Logout")]
         public IActionResult Logout()
@@ -187,12 +220,13 @@ namespace E_CommerceSystem.Controllers
             if (!string.IsNullOrWhiteSpace(refreshRaw))
                 _auth.RevokeRefreshToken(refreshRaw);
 
-            // Clear cookies
+            // Remove cookies from the browser
             Response.Cookies.Delete("access_token", AuthCookieOptions());
             Response.Cookies.Delete("refresh_token", AuthCookieOptions());
 
             return Ok(new { message = "Logged out" });
         }
+
 
 
 
@@ -228,37 +262,7 @@ namespace E_CommerceSystem.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        //    [NonAction]
-        //    public string GenerateJwtToken(string userId, string username, string role)
-        //    {
-        //        var jwt = _configuration.GetSection("Jwt");
-        //        var keyString = jwt["Key"]!;
-        //        var issuer = jwt["Issuer"]!;
-        //        var audience = jwt["Audience"]!;
-        //        var expiryMin = double.Parse(jwt["ExpiryInMinutes"]!);
-
-        //        var claims = new[]
-        //        {
-        //    new Claim(JwtRegisteredClaimNames.Sub, userId),
-        //    new Claim(JwtRegisteredClaimNames.Name, username),
-        //    new Claim(ClaimTypes.Role, role),
-        //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        //};
-
-        //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
-        //        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        //        var token = new JwtSecurityToken(
-        //            issuer: issuer,
-        //            audience: audience,
-        //            claims: claims,
-        //            expires: DateTime.UtcNow.AddMinutes(expiryMin),
-        //            signingCredentials: creds
-        //        );
-
-        //        return new JwtSecurityTokenHandler().WriteToken(token);
-        //    }
-
+       
 
 
     }
